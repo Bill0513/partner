@@ -46,6 +46,7 @@ export class User {
     type: 'varchar',
     length: 100,
     comment: '头像',
+    default: '',
   })
   head_pic: string;
 
@@ -53,18 +54,21 @@ export class User {
     type: 'varchar',
     length: 20,
     comment: '手机号',
+    default: '',
   })
   phone_number: string;
 
   @Column({
     type: 'boolean',
     comment: '是否被冻结',
+    default: false,
   })
   is_forzen: boolean;
 
   @Column({
     type: 'boolean',
     comment: '是否是管理员',
+    default: false,
   })
   is_admin: boolean;
 
