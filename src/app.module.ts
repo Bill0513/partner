@@ -9,6 +9,7 @@ import { Role } from './user/entities/role.entity';
 import { RedisModule } from './redis/redis.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -32,6 +33,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           connectorPackage: 'mysql2',
           extra: {
             authPlugin: 'sha256_password',
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
+    JwtModule.registerAsync({
+      global: true,
+      useFactory(configService: ConfigService) {
+        return {
+          secret: configService.get('jwt_secret'),
+          signOptions: {
+            expiresIn: '30m',
           },
         };
       },

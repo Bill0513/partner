@@ -12,6 +12,8 @@ import { RedisService } from 'src/redis/redis.service';
 import { md5 } from 'src/utils';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
+import { LoginUserDto } from './dto/loginUser-dto';
+import { LoginUserVo } from './dto/login-user.vo';
 
 @Injectable()
 export class UserService {
@@ -102,5 +104,72 @@ export class UserService {
     await this.permissionRepository.save([permission1, permission2]);
     await this.roleRepository.save([role1, role2]);
     await this.userRepository.save([user1, user2]);
+  }
+
+  async login(loginUser: LoginUserDto, isAdmin: boolean) {
+    const existUser = await this.userRepository.findOne({
+      where: {
+        username: loginUser.username,
+        is_admin: isAdmin,
+      },
+      relations: ['roles', 'roles.permissions'],
+    });
+    if (!existUser) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    if (existUser.password !== md5(loginUser.password)) {
+      throw new BadRequestException('密码错误');
+    }
+
+    const vo = new LoginUserVo();
+
+    vo.userInfo = {
+      id: existUser.id,
+      username: existUser.username,
+      nick_name: existUser.nick_name,
+      email: existUser.email,
+      phone_number: existUser.phone_number,
+      head_pic: existUser.head_pic,
+      create_time: existUser.create_time,
+      is_forzen: existUser.is_forzen,
+      is_admin: existUser.is_admin,
+      roles: existUser.roles.map((item) => item.name),
+      permissions: existUser.roles.reduce((arr, item) => {
+        item.permissions.forEach((permission) => {
+          if (arr.indexOf(permission) === -1) {
+            arr.push(permission);
+          }
+        });
+        return arr;
+      }, []),
+    };
+
+    return vo;
+  }
+
+  async findUserById(userId: number, is_admin) {
+    const existUser = await this.userRepository.findOne({
+      where: {
+        id: userId,
+        is_admin: is_admin,
+      },
+      relations: ['roles', 'roles.permissions'],
+    });
+
+    return {
+      id: existUser.id,
+      username: existUser.username,
+      is_admin: existUser.is_admin,
+      roles: existUser.roles.map((item) => item.name),
+      permissions: existUser.roles.reduce((arr, item) => {
+        item.permissions.forEach((permission) => {
+          if (arr.indexOf(permission) === -1) {
+            arr.push(permission);
+          }
+        });
+        return arr;
+      }, []),
+    };
   }
 }
