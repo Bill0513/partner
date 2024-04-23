@@ -32,4 +32,10 @@ export class UserController {
     });
     return '发送成功';
   }
+
+  @Get('init')
+  async initData() {
+    await this.userService.initData();
+    return 'done';
+  }
 }
