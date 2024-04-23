@@ -19,7 +19,7 @@ interface UserInfo {
 
   roles: string[];
 
-  permissions: string[];
+  permissions: PermissionType[];
 }
 
 export class LoginUserVo {
@@ -28,4 +28,10 @@ export class LoginUserVo {
   accessToken: string;
 
   refreshToken: string;
+}
+
+export interface PermissionType {
+  id: number;
+  code: string;
+  description: string;
 }
