@@ -17,6 +17,7 @@ import { LoginUserVo } from './dto/login-user.vo';
 import { UserDetailVo } from './dto/user-info.vo';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserListVo } from './dto/user-list.vo';
 
 @Injectable()
 export class UserService {
@@ -324,9 +325,10 @@ export class UserService {
       where: condition,
     });
 
-    return {
-      list,
-      total,
-    };
+    const vo = new UserListVo();
+    vo.list = list;
+    vo.total = total;
+
+    return vo;
   }
 }
