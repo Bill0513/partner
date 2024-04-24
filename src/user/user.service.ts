@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { RegisterDto } from './dto/register-dto';
 import { RedisService } from 'src/redis/redis.service';
@@ -284,5 +284,49 @@ export class UserService {
       this.logger.error(error, UserService);
       return '冻结用户失败';
     }
+  }
+
+  async findUsersByPageOption(
+    page: number,
+    size: number,
+    username?: string,
+    nick_name?: string,
+    email?: string,
+  ) {
+    const skipCount = (page - 1) * size;
+
+    const condition: Record<string, any> = {};
+
+    if (username) {
+      condition.username = Like(`%${username}%`);
+    }
+    if (nick_name) {
+      condition.nick_name = Like(`%${nick_name}%`);
+    }
+
+    if (email) {
+      condition.email = Like(`%${email}%`);
+    }
+
+    const [list, total] = await this.userRepository.findAndCount({
+      select: [
+        'id',
+        'username',
+        'nick_name',
+        'email',
+        'phone_number',
+        'is_forzen',
+        'head_pic',
+        'create_time',
+      ],
+      skip: skipCount,
+      take: size,
+      where: condition,
+    });
+
+    return {
+      list,
+      total,
+    };
   }
 }

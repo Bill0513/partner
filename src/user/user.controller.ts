@@ -7,6 +7,7 @@ import {
   Inject,
   BadRequestException,
   UnauthorizedException,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterDto } from './dto/register-dto';
@@ -19,6 +20,7 @@ import { RequireLogin, UserInfo } from 'src/custom.decorator';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EMAIL_REG } from 'src/constants';
+import { generateParseIntPipe } from 'src/utils';
 
 @Controller('user')
 export class UserController {
@@ -279,5 +281,25 @@ export class UserController {
   @Get('/admin/freeze')
   async freeze(@Query('id') id: number) {
     return await this.userService.freeze(id);
+  }
+
+  @RequireLogin()
+  @Get('/admin/list')
+  async list(
+    @Query('page', new DefaultValuePipe(1), generateParseIntPipe('page'))
+    page: number,
+    @Query('size', new DefaultValuePipe(10), generateParseIntPipe('size'))
+    size: number,
+    @Query('username') username?: string,
+    @Query('nick_name') nick_name?: string,
+    @Query('email') email?: string,
+  ) {
+    return await this.userService.findUsersByPageOption(
+      page,
+      size,
+      username,
+      nick_name,
+      email,
+    );
   }
 }
