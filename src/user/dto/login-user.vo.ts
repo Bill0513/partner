@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class PermissionType {
+  @ApiProperty()
+  id: number;
+  @ApiProperty()
+  code: string;
+  @ApiProperty()
+  description: string;
+}
+
 class UserInfo {
   @ApiProperty()
   id: number;
@@ -31,7 +40,9 @@ class UserInfo {
   @ApiProperty()
   roles: string[];
 
-  @ApiProperty()
+  @ApiProperty({
+    type: [PermissionType],
+  })
   permissions: PermissionType[];
 }
 
@@ -44,10 +55,4 @@ export class LoginUserVo {
 
   @ApiProperty()
   refreshToken: string;
-}
-
-export interface PermissionType {
-  id: number;
-  code: string;
-  description: string;
 }

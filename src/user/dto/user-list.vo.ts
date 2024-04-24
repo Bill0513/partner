@@ -29,4 +29,8 @@ export class UserListVo {
   list: User[];
   @ApiProperty()
   total: number;
+  @ApiProperty()
+  page: number;
+  @ApiProperty()
+  size: number;
 }

@@ -328,6 +328,8 @@ export class UserService {
     const vo = new UserListVo();
     vo.list = list;
     vo.total = total;
+    vo.page = page;
+    vo.size = size;
 
     return vo;
   }
