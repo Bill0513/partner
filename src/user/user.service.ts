@@ -14,8 +14,9 @@ import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { LoginUserDto } from './dto/loginUser-dto';
 import { LoginUserVo } from './dto/login-user.vo';
-import { UserDetailVo } from './entities/user-info.vo';
+import { UserDetailVo } from './dto/user-info.vo';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -221,6 +222,41 @@ export class UserService {
       return '密码修改成功';
     } catch (error) {
       return '密码修改失败';
+    }
+  }
+
+  async update(userId: number, updateUserDto: UpdateUserDto) {
+    const redisCaptcha = await this.redisService.get(
+      `update_user_captcha_${updateUserDto.email}`,
+    );
+
+    if (!redisCaptcha) {
+      throw new BadRequestException('验证码已失效');
+    }
+
+    if (redisCaptcha !== updateUserDto.captcha) {
+      throw new BadRequestException('验证码不正确');
+    }
+
+    const existUser = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (updateUserDto.email) {
+      existUser.email = updateUserDto.email;
+    }
+    if (updateUserDto.head_pic) {
+      existUser.head_pic = updateUserDto.head_pic;
+    }
+
+    try {
+      await this.userRepository.save(existUser);
+      return '用户信息修改成功';
+    } catch (error) {
+      this.logger.error(error, UserService);
+      return '用户信息修改失败';
     }
   }
 }

@@ -17,6 +17,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { EMAIL_REG } from 'src/constants';
 
 @Controller('user')
 export class UserController {
@@ -221,9 +223,7 @@ export class UserController {
   @RequireLogin()
   @Get('update_password/captcha')
   async updatePasswordCaptcha(@Query('address') address: string) {
-    const emailReg = /^\w{3,}(\.\w+)*@[A-z0-9]+(\.[A-z]{2,5}){1,2}$/g;
-
-    if (!emailReg.test(address)) {
+    if (!EMAIL_REG.test(address)) {
       throw new BadRequestException('邮箱地址错误');
     }
     const code = Math.random().toString().slice(2, 8);
@@ -238,6 +238,38 @@ export class UserController {
       to: address,
       subject: '更换密码验证码',
       html: `<p>你的更改密码验证码是 ${code}</p>`,
+    });
+
+    return '发送成功';
+  }
+
+  @Post(['update', 'admin/update'])
+  @RequireLogin()
+  async update(
+    @UserInfo('userId') userId: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return await this.userService.update(userId, updateUserDto);
+  }
+
+  @RequireLogin()
+  @Get('update_userInfo/captcha')
+  async updateUserInfoCaptcha(@Query('address') address: string) {
+    if (!EMAIL_REG.test(address)) {
+      throw new BadRequestException('邮箱地址错误');
+    }
+    const code = Math.random().toString().slice(2, 8);
+
+    await this.redisService.set(
+      `update_user_captcha_${address}`,
+      code,
+      10 * 60,
+    );
+
+    await this.emailService.sendMail({
+      to: address,
+      subject: '修改信息验证码',
+      html: `<p>你的修改信息验证码是 ${code}</p>`,
     });
 
     return '发送成功';
