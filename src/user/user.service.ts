@@ -14,6 +14,8 @@ import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { LoginUserDto } from './dto/loginUser-dto';
 import { LoginUserVo } from './dto/login-user.vo';
+import { UserDetailVo } from './entities/user-info.vo';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 
 @Injectable()
 export class UserService {
@@ -171,5 +173,54 @@ export class UserService {
         return arr;
       }, []),
     };
+  }
+
+  async findUserDetailById(userId: number) {
+    const existUser = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    const vo = new UserDetailVo();
+    vo.id = existUser.id;
+    vo.createTime = existUser.create_time;
+    vo.email = existUser.email;
+    vo.headPic = existUser.head_pic;
+    vo.isFrozen = existUser.is_forzen;
+    vo.nickName = existUser.nick_name;
+    vo.phoneNumber = existUser.phone_number;
+    vo.username = existUser.username;
+
+    return vo;
+  }
+
+  async updatePassword(userId: number, passwordDto: UpdateUserPasswordDto) {
+    const captcha = await this.redisService.get(
+      `update_password_captcha_${passwordDto.email}`,
+    );
+
+    if (!captcha) {
+      throw new BadRequestException('验证码已失效');
+    }
+
+    if (passwordDto.captcha !== captcha) {
+      throw new BadRequestException('验证码不正确');
+    }
+
+    const existUser = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    existUser.password = md5(passwordDto.password);
+
+    try {
+      await this.userRepository.save(existUser);
+      return '密码修改成功';
+    } catch (error) {
+      return '密码修改失败';
+    }
   }
 }
