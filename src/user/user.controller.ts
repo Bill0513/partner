@@ -274,4 +274,10 @@ export class UserController {
 
     return '发送成功';
   }
+
+  @RequireLogin()
+  @Get('/admin/freeze')
+  async freeze(@Query('id') id: number) {
+    return await this.userService.freeze(id);
+  }
 }

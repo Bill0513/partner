@@ -259,4 +259,30 @@ export class UserService {
       return '用户信息修改失败';
     }
   }
+
+  async freeze(id: number) {
+    if (!id) {
+      throw new BadRequestException('用户id不能为空');
+    }
+
+    const existUser = await this.userRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (existUser.is_forzen) {
+      throw new BadRequestException('该用户已被冻结，无需重复操作');
+    }
+
+    existUser.is_forzen = true;
+
+    try {
+      await this.userRepository.save(existUser);
+      return '冻结用户成功';
+    } catch (error) {
+      this.logger.error(error, UserService);
+      return '冻结用户失败';
+    }
+  }
 }
