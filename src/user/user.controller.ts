@@ -9,6 +9,8 @@ import {
   UnauthorizedException,
   DefaultValuePipe,
   HttpStatus,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterDto } from './dto/register-dto';
@@ -27,6 +29,9 @@ import { LoginUserVo } from './dto/login-user.vo';
 import { RefreshTokenVo } from './dto/refresh-token.vo';
 import { UserDetailVo } from './dto/user-info.vo';
 import { UserListVo } from './dto/user-list.vo';
+import { FileInterceptor } from '@nestjs/platform-express/multer';
+import * as path from 'path';
+import { storage } from 'src/my-file-storage';
 
 @ApiTags('用户管理模块')
 @Controller('user')
@@ -132,6 +137,7 @@ export class UserController {
         username: vo.userInfo.username,
         roles: vo.userInfo.roles,
         permissions: vo.userInfo.permissions,
+        email: vo.userInfo.email,
       },
       {
         expiresIn:
@@ -178,6 +184,7 @@ export class UserController {
         username: vo.userInfo.username,
         roles: vo.userInfo.roles,
         permissions: vo.userInfo.permissions,
+        email: vo.userInfo.email,
       },
       {
         expiresIn:
@@ -236,6 +243,7 @@ export class UserController {
           username: existUser.username,
           roles: existUser.roles,
           permissions: existUser.permissions,
+          email: existUser.email,
         },
         {
           expiresIn:
@@ -360,14 +368,10 @@ export class UserController {
         type: String,
       },
     ],
-    bearerAuth: true,
   })
   @Post(['update_password', 'admin/update_password'])
-  async updatePassword(
-    @UserInfo('userId') userId: number,
-    @Body() passwordDto: UpdateUserPasswordDto,
-  ) {
-    return await this.userService.updatePassword(userId, passwordDto);
+  async updatePassword(@Body() passwordDto: UpdateUserPasswordDto) {
+    return await this.userService.updatePassword(passwordDto);
   }
 
   @SwaggerDecorator({
@@ -388,7 +392,6 @@ export class UserController {
         type: String,
       },
     ],
-    bearerAuth: true,
   })
   @Get('update_password/captcha')
   async updatePasswordCaptcha(@Query('address') address: string) {
@@ -439,15 +442,6 @@ export class UserController {
   }
 
   @SwaggerDecorator({
-    query: [
-      {
-        name: 'address',
-        type: String,
-        description: '邮箱地址',
-        required: true,
-        example: 'xxx@xx.com',
-      },
-    ],
     response: [
       {
         status: HttpStatus.OK,
@@ -463,7 +457,7 @@ export class UserController {
     bearerAuth: true,
   })
   @Get('update_userInfo/captcha')
-  async updateUserInfoCaptcha(@Query('address') address: string) {
+  async updateUserInfoCaptcha(@UserInfo('email') address: string) {
     if (!EMAIL_REG.test(address)) {
       throw new BadRequestException('邮箱地址错误');
     }
@@ -570,5 +564,28 @@ export class UserController {
       nick_name,
       email,
     );
+  }
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      dest: 'uploads',
+      storage: storage,
+      limits: {
+        fileSize: 1024 * 1024 * 3,
+      },
+      fileFilter(req, file, callback) {
+        const extname = path.extname(file.originalname);
+        if (['.png', '.jpg', '.gif', '.jpeg'].includes(extname)) {
+          callback(null, true);
+        } else {
+          callback(new BadRequestException('只能上传图片'), false);
+        }
+      },
+    }),
+  )
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    console.log('file', file);
+    return file.path;
   }
 }

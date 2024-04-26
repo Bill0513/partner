@@ -5,6 +5,12 @@ export class UpdateUserPasswordDto {
   @IsNotEmpty({
     message: '密码不能为空',
   })
+  @ApiProperty()
+  username: string;
+
+  @IsNotEmpty({
+    message: '密码不能为空',
+  })
   @MinLength(6, {
     message: '密码不能少于 6 位',
   })

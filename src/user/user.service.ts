@@ -165,6 +165,7 @@ export class UserService {
       id: existUser.id,
       username: existUser.username,
       is_admin: existUser.is_admin,
+      email: existUser.email,
       roles: existUser.roles.map((item) => item.name),
       permissions: existUser.roles.reduce((arr, item) => {
         item.permissions.forEach((permission) => {
@@ -197,7 +198,7 @@ export class UserService {
     return vo;
   }
 
-  async updatePassword(userId: number, passwordDto: UpdateUserPasswordDto) {
+  async updatePassword(passwordDto: UpdateUserPasswordDto) {
     const captcha = await this.redisService.get(
       `update_password_captcha_${passwordDto.email}`,
     );
@@ -212,9 +213,17 @@ export class UserService {
 
     const existUser = await this.userRepository.findOne({
       where: {
-        id: userId,
+        username: passwordDto.username,
       },
     });
+
+    if (!existUser) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    if (existUser.email !== passwordDto.email) {
+      throw new BadRequestException('邮箱不正确');
+    }
 
     existUser.password = md5(passwordDto.password);
 
@@ -250,6 +259,9 @@ export class UserService {
     }
     if (updateUserDto.head_pic) {
       existUser.head_pic = updateUserDto.head_pic;
+    }
+    if (updateUserDto.nick_name) {
+      existUser.nick_name = updateUserDto.nick_name;
     }
 
     try {
