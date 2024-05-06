@@ -4,6 +4,8 @@ import { MeetingRoom } from './entities/meeting-room.entity';
 import { Like, Repository } from 'typeorm';
 import { CreateMeetingRoomDto } from './dto/create-meeting-room.dto';
 import { UpdateMeetingRoomDto } from './dto/update-meeting-room.dto';
+import { MeetingRoomListVo } from './dto/meeting-room-list.vo';
+import { MeetingRoomDetailVo } from './dto/meeting-room-detail.vo';
 
 @Injectable()
 export class MeetingRoomService {
@@ -62,10 +64,11 @@ export class MeetingRoomService {
       where: condition,
     });
 
-    return {
-      list,
-      total,
-    };
+    const vo = new MeetingRoomListVo();
+    vo.list = list;
+    vo.total = total;
+
+    return vo;
   }
   async create(meetingRoomDto: CreateMeetingRoomDto) {
     const existRoom = await this.meetingRoomRepository.findOneBy({
@@ -111,9 +114,19 @@ export class MeetingRoomService {
   }
 
   async findById(id: number) {
-    return await this.meetingRoomRepository.findOneBy({
+    const exsitRoom = await this.meetingRoomRepository.findOneBy({
       id: id,
     });
+    const vo = new MeetingRoomDetailVo();
+    vo.id = exsitRoom.id;
+    vo.capacity = exsitRoom.capacity;
+    vo.description = exsitRoom.description;
+    vo.equipment = exsitRoom.equipment;
+    vo.isBooked = exsitRoom.isBooked;
+    vo.location = exsitRoom.location;
+    vo.name = exsitRoom.name;
+
+    return vo;
   }
 
   async delete(id: number) {
