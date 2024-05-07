@@ -58,7 +58,7 @@ export class MeetingRoomService {
     }
 
     const [list, total] = await this.meetingRoomRepository.findAndCount({
-      select: ['id', 'name', 'capacity', 'equipment', 'isBooked'],
+      select: ['id', 'name', 'capacity', 'equipment', 'isBooked', 'location'],
       skip: skipCount,
       take: size,
       where: condition,
