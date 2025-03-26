@@ -1,348 +1,125 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import { RegisterDto } from './dto/register-dto';
-import { RedisService } from 'src/redis/redis.service';
-import { md5 } from 'src/utils';
-import { Role } from './entities/role.entity';
-import { Permission } from './entities/permission.entity';
-import { LoginUserDto } from './dto/loginUser-dto';
-import { LoginUserVo } from './dto/login-user.vo';
-import { UserDetailVo } from './dto/user-info.vo';
-import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserListVo } from './dto/user-list.vo';
+import { TaskService } from 'src/task/task.service';
+import { AuthUserDto } from '../auth/dto/auth.dto';
 
 @Injectable()
 export class UserService {
-  private logger = new Logger();
+  constructor(
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly taskService: TaskService,
+  ) {}
 
-  @InjectRepository(User)
-  private readonly userRepository: Repository<User>;
-
-  @InjectRepository(Role)
-  private readonly roleRepository: Repository<Role>;
-
-  @InjectRepository(Permission)
-  private readonly permissionRepository: Repository<Permission>;
-
-  @Inject(RedisService)
-  private readonly redisService: RedisService;
-
-  async register(registerDto: RegisterDto) {
-    const captcha = await this.redisService.get(`captcha_${registerDto.email}`);
-
-    if (!captcha) {
-      throw new BadRequestException('验证码已失效');
-    }
-
-    if (captcha !== registerDto.captcha) {
-      throw new BadRequestException('验证码不正确');
-    }
-
-    const existUser = await this.userRepository.findOne({
-      where: {
-        username: registerDto.username,
-      },
-    });
-    if (existUser) {
-      throw new BadRequestException('用户名已存在');
-    }
-
-    const newUser = new User();
-    newUser.username = registerDto.username;
-    newUser.password = md5(registerDto.password);
-    newUser.email = registerDto.email;
-    newUser.nick_name = registerDto.nickname;
-
+  async create(authUserDto: AuthUserDto) {
     try {
-      await this.userRepository.save(newUser);
-      return '注册成功';
+      const userTemp = this.userRepository.create();
+
+      const { username, nickname, sex, password } = authUserDto;
+
+      userTemp.username = username;
+      userTemp.nickname = nickname;
+      userTemp.sex = sex;
+      userTemp.password = await bcrypt.hash(password, 10);
+      userTemp.uId = Math.random().toString(16).substr(2, 8).toUpperCase();
+
+      const user = await this.userRepository.save(userTemp);
+      return user.id;
     } catch (error) {
-      this.logger.error(error, UserService);
-      return '注册失败';
+      throw new Error('创建用户失败'); // 抛出异常
     }
   }
 
-  async initData() {
-    const user1 = new User();
-    user1.username = 'zhangsan';
-    user1.password = md5('111111');
-    user1.email = 'xxx@xx.com';
-    user1.is_admin = true;
-    user1.nick_name = '张三';
-    user1.phone_number = '13233323333';
-
-    const user2 = new User();
-    user2.username = 'lisi';
-    user2.password = md5('222222');
-    user2.email = 'yy@yy.com';
-    user2.nick_name = '李四';
-
-    const role1 = new Role();
-    role1.name = '管理员';
-
-    const role2 = new Role();
-    role2.name = '普通用户';
-
-    const permission1 = new Permission();
-    permission1.code = 'ccc';
-    permission1.description = '访问 ccc 接口';
-
-    const permission2 = new Permission();
-    permission2.code = 'ddd';
-    permission2.description = '访问 ddd 接口';
-
-    user1.roles = [role1];
-    user2.roles = [role2];
-
-    role1.permissions = [permission1, permission2];
-    role2.permissions = [permission1];
-
-    await this.permissionRepository.save([permission1, permission2]);
-    await this.roleRepository.save([role1, role2]);
-    await this.userRepository.save([user1, user2]);
-  }
-
-  async login(loginUser: LoginUserDto, isAdmin: boolean) {
-    const existUser = await this.userRepository.findOne({
-      where: {
-        username: loginUser.username,
-        is_admin: isAdmin,
-      },
-      relations: ['roles', 'roles.permissions'],
+  async getProfile(userId: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
     });
-    if (!existUser) {
-      throw new BadRequestException('用户不存在');
+    const tasks = await this.taskService.findRecentlyInfo(userId);
+    let couple = {};
+    if (user.partnerId) {
+      couple = await this.userRepository.findOne({
+        select: {
+          id: true,
+          nickname: true,
+          avatar: true,
+        },
+        where: {
+          id: user.partnerId,
+        },
+      });
     }
-
-    if (existUser.password !== md5(loginUser.password)) {
-      throw new BadRequestException('密码错误');
-    }
-
-    const vo = new LoginUserVo();
-
-    vo.userInfo = {
-      id: existUser.id,
-      username: existUser.username,
-      nick_name: existUser.nick_name,
-      email: existUser.email,
-      phone_number: existUser.phone_number,
-      head_pic: existUser.head_pic,
-      create_time: existUser.create_time,
-      is_forzen: existUser.is_forzen,
-      is_admin: existUser.is_admin,
-      roles: existUser.roles.map((item) => item.name),
-      permissions: existUser.roles.reduce((arr, item) => {
-        item.permissions.forEach((permission) => {
-          if (arr.indexOf(permission) === -1) {
-            arr.push(permission);
-          }
-        });
-        return arr;
-      }, []),
-    };
-
-    return vo;
-  }
-
-  async findUserById(userId: number, is_admin) {
-    const existUser = await this.userRepository.findOne({
-      where: {
-        id: userId,
-        is_admin: is_admin,
-      },
-      relations: ['roles', 'roles.permissions'],
-    });
 
     return {
-      id: existUser.id,
-      username: existUser.username,
-      is_admin: existUser.is_admin,
-      email: existUser.email,
-      roles: existUser.roles.map((item) => item.name),
-      permissions: existUser.roles.reduce((arr, item) => {
-        item.permissions.forEach((permission) => {
-          if (arr.indexOf(permission) === -1) {
-            arr.push(permission);
-          }
-        });
-        return arr;
-      }, []),
+      id: user.id,
+      username: user.username,
+      nickname: user.nickname,
+      sex: user.sex,
+      uId: user.uId,
+      reward: user.reward,
+      taskDesc: tasks,
+      checkInDays: 0,
+      avatar: user.avatar,
+      couple,
+      bindingTime: user.bindingTime,
     };
   }
 
-  async findUserDetailById(userId: number) {
-    const existUser = await this.userRepository.findOne({
+  async find({ username, id }: { username?: string; id?: number }) {
+    return await this.userRepository.findOne({
       where: {
-        id: userId,
+        username,
+        id,
       },
     });
-
-    const vo = new UserDetailVo();
-    vo.id = existUser.id;
-    vo.createTime = existUser.create_time;
-    vo.email = existUser.email;
-    vo.headPic = existUser.head_pic;
-    vo.isFrozen = existUser.is_forzen;
-    vo.nickName = existUser.nick_name;
-    vo.phoneNumber = existUser.phone_number;
-    vo.username = existUser.username;
-
-    return vo;
   }
 
-  async updatePassword(passwordDto: UpdateUserPasswordDto) {
-    const captcha = await this.redisService.get(
-      `update_password_captcha_${passwordDto.email}`,
-    );
-
-    if (!captcha) {
-      throw new BadRequestException('验证码已失效');
-    }
-
-    if (passwordDto.captcha !== captcha) {
-      throw new BadRequestException('验证码不正确');
-    }
-
-    const existUser = await this.userRepository.findOne({
-      where: {
-        username: passwordDto.username,
-      },
-    });
-
-    if (!existUser) {
-      throw new BadRequestException('用户不存在');
-    }
-
-    if (existUser.email !== passwordDto.email) {
-      throw new BadRequestException('邮箱不正确');
-    }
-
-    existUser.password = md5(passwordDto.password);
-
+  async setPartner(uId: string, userId: number) {
+    const queryRunner =
+      this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      await this.userRepository.save(existUser);
-      return '密码修改成功';
+      const tempUser = await this.userRepository.findOne({
+        where: {
+          uId,
+        },
+      });
+
+      if (!tempUser) {
+        throw new BadRequestException('绑定码无效');
+      }
+
+      const tempUser2 = await this.userRepository.findOne({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (tempUser.id === tempUser2.id) {
+        throw new BadRequestException('绑定码无效');
+      }
+
+      const bindingTime = Date.now();
+
+      await queryRunner.manager.update(User, tempUser.id, {
+        partnerId: tempUser2.id,
+        bindingTime: bindingTime,
+      });
+      await queryRunner.manager.update(User, tempUser2.id, {
+        partnerId: tempUser.id,
+        bindingTime: bindingTime,
+      });
+
+      await queryRunner.commitTransaction();
+
+      return true;
     } catch (error) {
-      return '密码修改失败';
+      await queryRunner.rollbackTransaction();
+      throw new Error(error);
+    } finally {
+      await queryRunner.release();
     }
-  }
-
-  async update(userId: number, updateUserDto: UpdateUserDto) {
-    const redisCaptcha = await this.redisService.get(
-      `update_user_captcha_${updateUserDto.email}`,
-    );
-
-    if (!redisCaptcha) {
-      throw new BadRequestException('验证码已失效');
-    }
-
-    if (redisCaptcha !== updateUserDto.captcha) {
-      throw new BadRequestException('验证码不正确');
-    }
-
-    const existUser = await this.userRepository.findOne({
-      where: {
-        id: userId,
-      },
-    });
-
-    if (updateUserDto.email) {
-      existUser.email = updateUserDto.email;
-    }
-    if (updateUserDto.head_pic) {
-      existUser.head_pic = updateUserDto.head_pic;
-    }
-    if (updateUserDto.nick_name) {
-      existUser.nick_name = updateUserDto.nick_name;
-    }
-
-    try {
-      await this.userRepository.save(existUser);
-      return '用户信息修改成功';
-    } catch (error) {
-      this.logger.error(error, UserService);
-      return '用户信息修改失败';
-    }
-  }
-
-  async freeze(id: number) {
-    if (!id) {
-      throw new BadRequestException('用户id不能为空');
-    }
-
-    const existUser = await this.userRepository.findOne({
-      where: {
-        id: id,
-      },
-    });
-
-    if (existUser.is_forzen) {
-      throw new BadRequestException('该用户已被冻结，无需重复操作');
-    }
-
-    existUser.is_forzen = true;
-
-    try {
-      await this.userRepository.save(existUser);
-      return '冻结用户成功';
-    } catch (error) {
-      this.logger.error(error, UserService);
-      return '冻结用户失败';
-    }
-  }
-
-  async findUsersByPageOption(
-    page: number,
-    size: number,
-    username?: string,
-    nick_name?: string,
-    email?: string,
-  ) {
-    const skipCount = (page - 1) * size;
-
-    const condition: Record<string, any> = {};
-
-    if (username) {
-      condition.username = Like(`%${username}%`);
-    }
-    if (nick_name) {
-      condition.nick_name = Like(`%${nick_name}%`);
-    }
-
-    if (email) {
-      condition.email = Like(`%${email}%`);
-    }
-
-    const [list, total] = await this.userRepository.findAndCount({
-      select: [
-        'id',
-        'username',
-        'nick_name',
-        'email',
-        'phone_number',
-        'is_forzen',
-        'head_pic',
-        'create_time',
-      ],
-      skip: skipCount,
-      take: size,
-      where: condition,
-    });
-
-    const vo = new UserListVo();
-    vo.list = list;
-    vo.total = total;
-    vo.page = page;
-    vo.size = size;
-
-    return vo;
   }
 }

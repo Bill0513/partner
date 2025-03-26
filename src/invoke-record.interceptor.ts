@@ -24,9 +24,7 @@ export class InvokeRecordInterceptor implements NestInterceptor {
       `${method} ${path} ${ip} ${userAgent}: ${context.getClass().name} ${context.getHandler().name} invoked...`,
     );
 
-    this.logger.debug(
-      `user: ${request?.user?.userId}, ${request?.user?.username}`,
-    );
+    this.logger.debug(`user: ${request?.user?.id}, ${request?.user?.username}`);
 
     const now = Date.now();
 
