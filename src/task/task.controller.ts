@@ -6,13 +6,11 @@ import {
   Param,
   Patch,
   Post,
-  Req,
-  Request,
 } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskService } from './task.service';
-import { RequireLogin } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from 'src/custom.decorator';
 
 @Controller('task')
 export class TaskController {
@@ -21,12 +19,12 @@ export class TaskController {
 
   @RequireLogin()
   @Post('create')
-  async create(@Body() createTaskDto: CreateTaskDto, @Req() req: Request) {
-    return await this.taskService.create(
-      createTaskDto,
-      req['user'].id,
-      req['user'].nickname,
-    );
+  async create(
+    @Body() createTaskDto: CreateTaskDto,
+    @UserInfo('id') userId,
+    @UserInfo('nickname') nickname,
+  ) {
+    return await this.taskService.create(createTaskDto, userId, nickname);
   }
 
   @Get()
