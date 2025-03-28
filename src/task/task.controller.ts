@@ -4,13 +4,15 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
+  ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskService } from './task.service';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { TaskFindAllDto } from './dto/task.dto';
 
 @Controller('task')
 export class TaskController {
@@ -27,19 +29,26 @@ export class TaskController {
     return await this.taskService.create(createTaskDto, userId, nickname);
   }
 
-  @Get()
-  findAll() {
-    return this.taskService.findAll();
+  @Get('list')
+  @RequireLogin()
+  async list(@Query() queryDto: TaskFindAllDto, @UserInfo('id') userId) {
+    return await this.taskService.list(queryDto, userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.taskService.findOne(+id);
+  @Get('detail')
+  @RequireLogin()
+  async detail(@Query('id') id: number) {
+    return await this.taskService.detail(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.taskService.update(+id, updateTaskDto);
+  @Post(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @UserInfo('id') userId: number,
+    @UserInfo('nickname') nickname,
+  ) {
+    return this.taskService.update(id, updateTaskDto, userId, nickname);
   }
 
   @Delete(':id')

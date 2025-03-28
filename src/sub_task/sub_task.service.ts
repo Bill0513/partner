@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SubTask } from './entities/sub_task.entity';
 import { CreateSubTaskDto } from './dto/create-sub_task.dto';
+import { UpdateSubTaskDto } from './dto/update-sub_task.dto';
 
 @Injectable()
 export class SubTaskService {
@@ -32,19 +33,60 @@ export class SubTaskService {
     }
   }
 
-  findAll() {
-    return `This action returns all subTask`;
+  async update(
+    updateSubTaskDto: UpdateSubTaskDto,
+    taskId: number,
+    userId: number,
+    userName: string,
+  ) {
+    const { id, title, description } = updateSubTaskDto;
+
+    if (id) {
+      const subTask = await this.subTaskRepository.findOne({
+        where: {
+          id,
+        },
+      });
+
+      subTask.title = title;
+      subTask.description = description;
+      subTask.taskId = taskId;
+      subTask.updateby = userId;
+      subTask.updateName = userName;
+
+      await this.subTaskRepository.save(subTask);
+    } else {
+      const tmpSubTask = this.subTaskRepository.create();
+      tmpSubTask.title = title;
+      tmpSubTask.description = description;
+      tmpSubTask.taskId = taskId;
+      tmpSubTask.updateby = userId;
+      tmpSubTask.updateName = userName;
+
+      await this.subTaskRepository.save(tmpSubTask);
+    }
+
+    return true;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} subTask`;
+  async findByTaskId(taskId: number) {
+    return await this.subTaskRepository.find({
+      where: {
+        taskId,
+      },
+    });
   }
 
-  update(id: number) {
-    return `This action updates a #${id} subTask`;
-  }
+  async remove(id: number) {
+    const subTask = await this.subTaskRepository.findOne({
+      where: {
+        id,
+      },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} subTask`;
+    if (subTask) {
+      await this.subTaskRepository.remove(subTask);
+    }
+    return true;
   }
 }

@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -10,6 +15,7 @@ import { AuthUserDto } from '../auth/dto/auth.dto';
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @Inject(forwardRef(() => TaskService))
     private readonly taskService: TaskService,
   ) {}
 
@@ -76,15 +82,15 @@ export class UserService {
   }
 
   async setPartner(uId: string, userId: number) {
+    console.log(userId, 79);
     const queryRunner =
       this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       const tempUser = await this.userRepository.findOne({
-        where: {
-          uId,
-        },
+        where: { uId },
       });
 
       if (!tempUser) {
@@ -92,34 +98,60 @@ export class UserService {
       }
 
       const tempUser2 = await this.userRepository.findOne({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
       });
 
-      if (tempUser.id === tempUser2.id) {
-        throw new BadRequestException('绑定码无效');
+      if (!tempUser2) {
+        throw new BadRequestException('用户不存在');
       }
 
-      const bindingTime = Date.now();
+      if (tempUser.id === tempUser2.id) {
+        throw new BadRequestException('不能绑定自己');
+      }
+
+      // 检查是否已有伴侣
+      if (tempUser.partnerId) {
+        throw new BadRequestException('绑定码用户已有伴侣');
+      }
+
+      if (tempUser2.partnerId) {
+        throw new BadRequestException('当前用户已有伴侣');
+      }
+
+      const bindingTime = new Date();
 
       await queryRunner.manager.update(User, tempUser.id, {
         partnerId: tempUser2.id,
         bindingTime: bindingTime,
       });
+
       await queryRunner.manager.update(User, tempUser2.id, {
         partnerId: tempUser.id,
         bindingTime: bindingTime,
       });
 
       await queryRunner.commitTransaction();
-
       return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new Error(error);
+      // 直接重新抛出错误，保留原始错误信息
+      throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async getPartner(userId: number): Promise<number | null> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (user.partnerId) {
+      return user.partnerId;
+    } else {
+      return null;
     }
   }
 }
