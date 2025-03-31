@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -41,14 +40,14 @@ export class TaskController {
     return await this.taskService.detail(id);
   }
 
-  @Post(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
+  @Post('update')
+  @RequireLogin()
+  async update(
     @Body() updateTaskDto: UpdateTaskDto,
     @UserInfo('id') userId: number,
     @UserInfo('nickname') nickname,
   ) {
-    return this.taskService.update(id, updateTaskDto, userId, nickname);
+    return await this.taskService.update(updateTaskDto, userId, nickname);
   }
 
   @Delete(':id')

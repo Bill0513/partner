@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SubTask } from './entities/sub_task.entity';
@@ -60,6 +64,8 @@ export class SubTaskService {
       tmpSubTask.title = title;
       tmpSubTask.description = description;
       tmpSubTask.taskId = taskId;
+      tmpSubTask.createby = userId;
+      tmpSubTask.createName = userName;
       tmpSubTask.updateby = userId;
       tmpSubTask.updateName = userName;
 
@@ -88,5 +94,27 @@ export class SubTaskService {
       await this.subTaskRepository.remove(subTask);
     }
     return true;
+  }
+
+  async complete(id: number, userId: number, userName: string) {
+    try {
+      const subTask = await this.subTaskRepository.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!subTask) {
+        throw new BadRequestException('子任务不存在');
+      }
+
+      subTask.status = 'completed';
+      subTask.updateby = userId;
+      subTask.updateName = userName;
+      await this.subTaskRepository.save(subTask);
+      return true;
+    } catch (error) {
+      throw new InternalServerErrorException('更新任务失败：' + error.message);
+    }
   }
 }

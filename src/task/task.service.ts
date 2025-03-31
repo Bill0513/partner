@@ -183,9 +183,7 @@ export class TaskService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException(
-        'An error occurred while fetching tasks',
-      );
+      throw new InternalServerErrorException(`系统错误: ${error.message}`);
     }
   }
 
@@ -207,14 +205,17 @@ export class TaskService {
     return data;
   }
 
-  async update(id: number, updateTaskDto: UpdateTaskDto, userId, nickname) {
+  async update(updateTaskDto: UpdateTaskDto, userId, nickname) {
     const queryRunner =
       this.taskRepository.manager.connection.createQueryRunner();
     try {
       await queryRunner.connect();
       await queryRunner.startTransaction();
+
       // 1. 首先查找要更新的实体是否存在
-      const task = await this.taskRepository.findOne({ where: { id } });
+      const task = await queryRunner.manager.findOne(Task, {
+        where: { id: updateTaskDto.id },
+      });
 
       if (!task) {
         throw new NotFoundException(`该任务不存在`);
@@ -224,58 +225,67 @@ export class TaskService {
         throw new BadRequestException(`这不是你创建的任务`);
       }
 
-      const {
-        title,
-        description,
-        date,
-        time,
-        priority,
-        reward,
-        location,
-        subTasks,
-      } = updateTaskDto;
-
-      task.title = title;
-      task.description = description;
-      task.date = date;
-      task.time = time;
-      task.priority = priority;
-      task.reward = reward;
-      task.location = location;
-      task.updateby = userId;
-      task.updateName = nickname;
+      // 更新任务属性
+      Object.assign(task, {
+        title: updateTaskDto.title,
+        description: updateTaskDto.description,
+        date: updateTaskDto.date,
+        time: updateTaskDto.time,
+        priority: updateTaskDto.priority,
+        reward: updateTaskDto.reward,
+        location: updateTaskDto.location,
+        updateby: userId,
+        updateName: nickname,
+      });
 
       await queryRunner.manager.save(task);
 
-      const subTaskList = await this.subTaskService.findByTaskId(task.id);
+      const { subTasks } = updateTaskDto;
 
-      const subTaskListIds = subTaskList.map((v) => v.id);
+      // 处理子任务
+      if (subTasks && subTasks.length > 0) {
+        const existingSubTasks = await this.subTaskService.findByTaskId(
+          task.id,
+        );
 
-      subTasks.forEach((v) => {
-        if (subTaskListIds.includes(v.id)) {
-          const index = subTaskListIds.findIndex((c) => c === v.id);
-          subTaskListIds.splice(index, 1);
+        // 找出需要删除的子任务IDs
+        const subTaskIdsToKeep = new Set(
+          subTasks.filter((st) => st.id).map((st) => st.id),
+        );
+        const subTaskIdsToDelete = existingSubTasks
+          .filter((st) => !subTaskIdsToKeep.has(st.id))
+          .map((st) => st.id);
+
+        // 删除不再需要的子任务
+        for (const subTaskId of subTaskIdsToDelete) {
+          await this.subTaskService.remove(subTaskId);
         }
-      });
 
-      if (subTasks) {
+        // 更新或创建子任务
         for (const subTask of subTasks) {
           await this.subTaskService.update(subTask, task.id, userId, nickname);
         }
-      }
-
-      if (subTaskListIds.length) {
-        for (const subTaskId of subTaskListIds) {
-          await this.subTaskService.remove(subTaskId);
+      } else if (subTasks && subTasks.length === 0) {
+        // 如果提供了空数组，删除所有子任务
+        const existingSubTasks = await this.subTaskService.findByTaskId(
+          task.id,
+        );
+        for (const subTask of existingSubTasks) {
+          await this.subTaskService.remove(subTask.id);
         }
       }
 
       await queryRunner.commitTransaction();
-
       return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('服务器错误');
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error; // 重新抛出业务逻辑错误
+      }
+      throw new InternalServerErrorException('更新任务失败：' + error.message);
     } finally {
       await queryRunner.release();
     }
