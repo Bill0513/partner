@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -9,6 +10,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Reward } from './entities/reward.entity';
 import { Repository } from 'typeorm';
 import { Rule } from './entities/rule.entity';
+import { RewardFindAllDto } from './dto/list-reward.dto';
+import { UserService } from 'src/user/user.service';
+import { ALLOWED_SORT_FIELDS } from 'src/constants';
+import { RemoveRewardDto } from './dto/remove-reward.dto';
+import { ExchangeDto } from './dto/exchange.dto';
+import { Exchange } from './entities/exchange.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class RewardService {
@@ -17,7 +25,70 @@ export class RewardService {
     private rewardRepository: Repository<Reward>,
     @InjectRepository(Rule)
     private ruleRepository: Repository<Rule>,
+    private userService: UserService,
   ) {}
+
+  async list(queryDto: RewardFindAllDto, userId: number) {
+    try {
+      const { page, size, sort, order, isMy = false } = queryDto;
+      const queryBuilder = this.rewardRepository.createQueryBuilder('reward');
+
+      let partnerId: number;
+
+      if (!isMy) {
+        partnerId = await this.userService.getPartner(userId);
+      }
+
+      if (isMy) {
+        queryBuilder.andWhere('reward.createby = :createby', {
+          createby: userId,
+        });
+      } else {
+        if (partnerId) {
+          queryBuilder.andWhere(
+            '(reward.createby = :userId OR reward.createby = :partnerId)',
+            {
+              userId: userId,
+              partnerId: partnerId,
+            },
+          );
+        } else {
+          queryBuilder.andWhere('reward.createby = :createby', {
+            createby: userId,
+          });
+        }
+      }
+
+      const sortField = ALLOWED_SORT_FIELDS.includes(sort)
+        ? sort
+        : 'createtime';
+
+      const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+
+      queryBuilder.orderBy(`reward.${sortField}`, sortOrder);
+
+      const total = await queryBuilder.getCount();
+
+      queryBuilder.skip((page - 1) * size).take(size);
+
+      const list = await queryBuilder.getMany();
+
+      // 计算是否为最后一页
+      const isLast = page * size >= total;
+
+      return {
+        list,
+        meta: {
+          page: page,
+          size: size,
+          total: total,
+          isLast: isLast,
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(`系统错误: ${error.message}`);
+    }
+  }
   async create(
     createRewardDto: CreateRewardDto,
     userId: number,
@@ -38,6 +109,8 @@ export class RewardService {
         validity: createRewardDto.validity,
         createName: userName,
         createby: userId,
+        totalNum: createRewardDto.totalNum,
+        enableNum: createRewardDto.totalNum,
       });
 
       if (tmpReward.validity === 'limited') {
@@ -72,14 +145,6 @@ export class RewardService {
     } finally {
       await queryRunner.release();
     }
-  }
-
-  findAll() {
-    return `This action returns all reward`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} reward`;
   }
 
   async update(
@@ -132,6 +197,10 @@ export class RewardService {
           existReward.startDate = '';
           existReward.endDate = '';
         }
+      }
+
+      if (updateRewardDto.totalNum) {
+        existReward.totalNum = updateRewardDto.totalNum;
       }
 
       await queryRunner.manager.save(Reward, existReward);
@@ -220,7 +289,85 @@ export class RewardService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} reward`;
+  async remove(removeDto: RemoveRewardDto) {
+    try {
+      const { id } = removeDto;
+
+      const existReward = await this.rewardRepository.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!existReward) {
+        throw new NotFoundException('未找到');
+      }
+
+      await this.rewardRepository.remove(existReward);
+
+      return true;
+    } catch (error) {
+      throw new InternalServerErrorException('系统错误: ' + error.message);
+    }
+  }
+
+  async exchange(exchangeDto: ExchangeDto, userId: number, userName: string) {
+    const queryRunner =
+      await this.rewardRepository.manager.connection.createQueryRunner();
+    try {
+      const existReward = await queryRunner.manager.findOne(Reward, {
+        where: {
+          id: exchangeDto.id,
+        },
+      });
+
+      if (!existReward) {
+        throw new NotFoundException('未找到奖励');
+      }
+
+      if (existReward.enableNum === 0) {
+        throw new BadRequestException('数量不够兑换');
+      }
+
+      const user = await this.userService.find({
+        username: userName,
+        id: userId,
+      });
+
+      if (!user) {
+        throw new NotFoundException('用户不存在');
+      }
+
+      if (user.reward < existReward.reward) {
+        throw new BadRequestException('钱不够兑换该奖励');
+      }
+
+      await queryRunner.manager.update(User, userId, {
+        reward: user.reward - existReward.reward,
+      });
+
+      await queryRunner.manager.update(Reward, exchangeDto.id, {
+        enableNum: existReward.enableNum - 1,
+      });
+
+      const exchange = await queryRunner.manager.create(Exchange, {
+        reward: existReward.reward,
+        rewardId: existReward.id,
+        rewardTitle: existReward.title,
+        publishId: existReward.createby,
+        publishName: existReward.createName,
+        createby: userId,
+        createName: userName,
+        status: 'pending',
+      });
+
+      await queryRunner.manager.save(exchange);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

@@ -1,16 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { RewardService } from './reward.service';
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { UpdateRewardDto } from './dto/update-reward.dto';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { RewardFindAllDto } from './dto/list-reward.dto';
+import { RemoveRewardDto } from './dto/remove-reward.dto';
+import { ExchangeDto } from './dto/exchange.dto';
 
 @Controller('reward')
 export class RewardController {
@@ -26,14 +21,13 @@ export class RewardController {
     return await this.rewardService.create(createRewardDto, userId, userName);
   }
 
-  @Get()
-  findAll() {
-    return this.rewardService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.rewardService.findOne(+id);
+  @Get('list')
+  @RequireLogin()
+  async list(
+    @Query() queryDto: RewardFindAllDto,
+    @UserInfo('id') userId: number,
+  ) {
+    return await this.rewardService.list(queryDto, userId);
   }
 
   @Post('update')
@@ -46,9 +40,10 @@ export class RewardController {
     return await this.rewardService.update(updateRewardDto, userId, userName);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.rewardService.remove(+id);
+  @Post(':id')
+  @RequireLogin()
+  async remove(@Body() removeDto: RemoveRewardDto) {
+    return await this.rewardService.remove(removeDto);
   }
 
   @Get('hot')
@@ -59,5 +54,15 @@ export class RewardController {
     @UserInfo('nickname') userName: string,
   ) {
     return await this.rewardService.hot(id, userId, userName);
+  }
+
+  @Post('exchange')
+  @RequireLogin()
+  async exchange(
+    @Body() exchangeDto: ExchangeDto,
+    @UserInfo('id') userId: number,
+    @UserInfo('nickname') userName: string,
+  ) {
+    return await this.rewardService.exchange(exchangeDto, userId, userName);
   }
 }

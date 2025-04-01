@@ -7,36 +7,18 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Reward {
+export class Exchange {
   @PrimaryGeneratedColumn({ comment: 'id' })
   id: number;
 
-  @Column({ comment: '标题', nullable: false })
-  title: string;
-
-  @Column({ comment: '奖励', nullable: false })
+  @Column({ comment: '花费奖励', nullable: false })
   reward: number;
 
-  @Column({ comment: '描述', nullable: true })
-  description: string;
+  @Column({ comment: '奖励id' })
+  rewardId: number;
 
-  @Column({ comment: '开始日期', nullable: true })
-  startDate: string;
-
-  @Column({ comment: '结束日期', nullable: true })
-  endDate: string;
-
-  @Column({ type: 'enum', enum: ['permanent', 'limited'], comment: '时长' })
-  validity: 'permanent' | 'limited';
-
-  @Column({ comment: '总数量' })
-  totalNum: number;
-
-  @Column({ comment: '可使用' })
-  enableNum: number;
-
-  @Column({ comment: '是否热门 0非热门，1热门', default: 0 })
-  isHot: number;
+  @Column({ comment: '奖励标题' })
+  rewardTitle: string;
 
   @Column({
     type: 'enum',
@@ -45,6 +27,12 @@ export class Reward {
     default: 'pending',
   })
   status: 'pending' | 'completed';
+
+  @Column({ comment: '发布人id' })
+  publishId: number;
+
+  @Column({ comment: '发布人姓名' })
+  publishName: string;
 
   @CreateDateColumn({ comment: '创建时间' })
   createtime: Date;

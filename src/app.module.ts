@@ -17,6 +17,7 @@ import { LoginGuard } from './login.guard';
 import { RewardModule } from './reward/reward.module';
 import { Reward } from './reward/entities/reward.entity';
 import { Rule } from './reward/entities/rule.entity';
+import { Exchange } from './reward/entities/exchange.entity';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { Rule } from './reward/entities/rule.entity';
           database: configService.get('mysql_server_database'),
           synchronize: true,
           logging: true,
-          entities: [User, Task, SubTask, Reward, Rule],
+          entities: [User, Task, SubTask, Reward, Rule, Exchange],
           poolSize: 10,
           connectorPackage: 'mysql2',
           extra: {

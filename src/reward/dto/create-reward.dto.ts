@@ -37,4 +37,8 @@ export class CreateRewardDto {
   validity: 'permanent' | 'limited';
 
   rules: CreateRuleDto[];
+
+  @IsInt()
+  @IsNotEmpty()
+  totalNum: number;
 }
