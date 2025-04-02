@@ -5,7 +5,7 @@ import { UpdateRewardDto } from './dto/update-reward.dto';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
 import { RewardFindAllDto } from './dto/list-reward.dto';
 import { RemoveRewardDto } from './dto/remove-reward.dto';
-import { ExchangeDto } from './dto/exchange.dto';
+import { ExchangeDto, ExchangeListDto } from './dto/exchange.dto';
 
 @Controller('reward')
 export class RewardController {
@@ -40,7 +40,26 @@ export class RewardController {
     return await this.rewardService.update(updateRewardDto, userId, userName);
   }
 
-  @Post(':id')
+  @Get('exchange/list')
+  @RequireLogin()
+  async exchangeList(
+    @Query() exchangeListDto: ExchangeListDto,
+    @UserInfo('id') userId: number,
+  ) {
+    return await this.rewardService.exchangeList(exchangeListDto, userId);
+  }
+
+  @Post('exchange')
+  @RequireLogin()
+  async exchange(
+    @Body() exchangeDto: ExchangeDto,
+    @UserInfo('id') userId: number,
+    @UserInfo('nickname') userName: string,
+  ) {
+    return await this.rewardService.exchange(exchangeDto, userId, userName);
+  }
+
+  @Post('remove')
   @RequireLogin()
   async remove(@Body() removeDto: RemoveRewardDto) {
     return await this.rewardService.remove(removeDto);
@@ -54,15 +73,5 @@ export class RewardController {
     @UserInfo('nickname') userName: string,
   ) {
     return await this.rewardService.hot(id, userId, userName);
-  }
-
-  @Post('exchange')
-  @RequireLogin()
-  async exchange(
-    @Body() exchangeDto: ExchangeDto,
-    @UserInfo('id') userId: number,
-    @UserInfo('nickname') userName: string,
-  ) {
-    return await this.rewardService.exchange(exchangeDto, userId, userName);
   }
 }

@@ -14,7 +14,7 @@ import { RewardFindAllDto } from './dto/list-reward.dto';
 import { UserService } from 'src/user/user.service';
 import { ALLOWED_SORT_FIELDS } from 'src/constants';
 import { RemoveRewardDto } from './dto/remove-reward.dto';
-import { ExchangeDto } from './dto/exchange.dto';
+import { ExchangeDto, ExchangeListDto } from './dto/exchange.dto';
 import { Exchange } from './entities/exchange.entity';
 import { User } from 'src/user/entities/user.entity';
 
@@ -26,6 +26,9 @@ export class RewardService {
     @InjectRepository(Rule)
     private ruleRepository: Repository<Rule>,
     private userService: UserService,
+
+    @InjectRepository(Exchange)
+    private exchangeRepository: Repository<Exchange>,
   ) {}
 
   async list(queryDto: RewardFindAllDto, userId: number) {
@@ -315,6 +318,8 @@ export class RewardService {
     const queryRunner =
       await this.rewardRepository.manager.connection.createQueryRunner();
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       const existReward = await queryRunner.manager.findOne(Reward, {
         where: {
           id: exchangeDto.id,
@@ -364,10 +369,54 @@ export class RewardService {
       await queryRunner.manager.save(exchange);
 
       await queryRunner.commitTransaction();
+
+      return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
+      throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async exchangeList(exchangeListDto: ExchangeListDto, userId: number) {
+    try {
+      const { page, size, sort, order } = exchangeListDto;
+      const queryBuilder =
+        this.exchangeRepository.createQueryBuilder('exchange');
+
+      queryBuilder.andWhere('exchange.createby = :createby', {
+        createby: userId,
+      });
+
+      const sortField = ALLOWED_SORT_FIELDS.includes(sort)
+        ? sort
+        : 'createtime';
+
+      const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+
+      queryBuilder.orderBy(`exchange.${sortField}`, sortOrder);
+
+      const total = await queryBuilder.getCount();
+
+      queryBuilder.skip((page - 1) * size).take(size);
+
+      const list = await queryBuilder.getMany();
+
+      // 计算是否为最后一页
+      const isLast = page * size >= total;
+
+      return {
+        list,
+        meta: {
+          page: page,
+          size: size,
+          total: total,
+          isLast: isLast,
+        },
+      };
+    } catch (error) {
+      throw error;
     }
   }
 }

@@ -3,7 +3,6 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,9 +11,16 @@ import { Task } from './entities/task.entity';
 import { SubTaskService } from 'src/sub_task/sub_task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { TaskFindAllDto } from './dto/task.dto';
+import {
+  CompletedTaskDto,
+  RemoveTaskDto,
+  TaskFindAllDto,
+} from './dto/task.dto';
 import { ALLOWED_SORT_FIELDS } from 'src/constants';
 import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/entities/user.entity';
+import { SubTask } from 'src/sub_task/entities/sub_task.entity';
+import { errorHandler } from 'src/utils';
 @Injectable()
 export class TaskService {
   constructor(
@@ -73,11 +79,8 @@ export class TaskService {
       await queryRunner.commitTransaction();
       return result.id;
     } catch (error) {
-      // 当任何错误发生时（包括子任务创建错误），
-      // 回滚整个事务，这会撤销所有数据库更改，
-      // 包括主任务和所有已创建的子任务
       await queryRunner.rollbackTransaction();
-      throw new Error(error);
+      errorHandler(error);
     } finally {
       await queryRunner.release();
     }
@@ -121,7 +124,7 @@ export class TaskService {
         recentlyList,
       };
     } catch (error) {
-      throw new Error(error);
+      errorHandler(error);
     }
   }
 
@@ -183,26 +186,30 @@ export class TaskService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException(`系统错误: ${error.message}`);
+      errorHandler(error);
     }
   }
 
   async detail(id: number) {
-    const task = await this.taskRepository.findOne({
-      where: {
-        id,
-      },
-    });
+    try {
+      const task = await this.taskRepository.findOne({
+        where: {
+          id,
+        },
+      });
 
-    if (!task) {
-      throw new BadRequestException('该任务不存在');
+      if (!task) {
+        throw new BadRequestException('该任务不存在');
+      }
+
+      const subTasks = await this.subTaskService.findByTaskId(task.id);
+
+      const data = Object.assign(task, { subTasks });
+
+      return data;
+    } catch (error) {
+      errorHandler(error);
     }
-
-    const subTasks = await this.subTaskService.findByTaskId(task.id);
-
-    const data = Object.assign(task, { subTasks });
-
-    return data;
   }
 
   async update(updateTaskDto: UpdateTaskDto, userId, nickname) {
@@ -279,19 +286,79 @@ export class TaskService {
       return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error; // 重新抛出业务逻辑错误
-      }
-      throw new InternalServerErrorException('更新任务失败：' + error.message);
+      errorHandler(error);
     } finally {
       await queryRunner.release();
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} task`;
+  async completed(
+    completedTaskDto: CompletedTaskDto,
+    userId: number,
+    nickname: string,
+  ) {
+    const queryRunner =
+      await this.taskRepository.manager.connection.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const existTask = await queryRunner.manager.findOne(Task, {
+        where: {
+          id: completedTaskDto.id,
+        },
+      });
+
+      if (!existTask) {
+        throw new NotFoundException('未找到任务');
+      }
+
+      const subTasks = await queryRunner.manager.find(SubTask, {
+        where: {
+          taskId: existTask.id,
+        },
+      });
+
+      const allSubTasksCompleted = !subTasks.some(
+        (v) => v.status === 'pending',
+      );
+
+      if (!allSubTasksCompleted) {
+        throw new BadRequestException('还有子任务没有完成哦');
+      }
+
+      existTask.status = 'completed';
+      existTask.updateby = userId;
+      existTask.updateName = nickname;
+
+      const user = await this.userService.find({
+        username: nickname,
+        id: userId,
+      });
+
+      await queryRunner.manager.update(Task, existTask.id, existTask);
+
+      if (!user) {
+        throw new NotFoundException('用户不存在');
+      }
+
+      await queryRunner.manager.update(User, user.id, {
+        reward: user.reward + existTask.reward,
+      });
+
+      await queryRunner.commitTransaction();
+
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      errorHandler(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async remove(removeTaskDto: RemoveTaskDto) {
+    console.log(removeTaskDto);
+    return true;
   }
 }

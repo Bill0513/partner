@@ -1,17 +1,13 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskService } from './task.service';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
-import { TaskFindAllDto } from './dto/task.dto';
+import {
+  CompletedTaskDto,
+  RemoveTaskDto,
+  TaskFindAllDto,
+} from './dto/task.dto';
 
 @Controller('task')
 export class TaskController {
@@ -50,8 +46,19 @@ export class TaskController {
     return await this.taskService.update(updateTaskDto, userId, nickname);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.taskService.remove(+id);
+  @Post('complete')
+  @RequireLogin()
+  async completed(
+    @Body() completedTaskDto: CompletedTaskDto,
+    @UserInfo('id') userId: number,
+    @UserInfo('nickname') nickname,
+  ) {
+    return await this.taskService.completed(completedTaskDto, userId, nickname);
+  }
+
+  @Post('delete')
+  @RequireLogin()
+  async remove(removeTaskDto: RemoveTaskDto) {
+    return await this.taskService.remove(removeTaskDto);
   }
 }

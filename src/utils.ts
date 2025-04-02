@@ -1,4 +1,9 @@
-import { BadRequestException, ParseIntPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+  ParseIntPipe,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 
 export function md5(str) {
@@ -13,4 +18,15 @@ export function generateParseIntPipe(name) {
       throw new BadRequestException(name + ' 应该传数字');
     },
   });
+}
+
+export function errorHandler(error) {
+  if (
+    error instanceof BadRequestException ||
+    error instanceof NotFoundException
+  ) {
+    throw error;
+  } else {
+    throw new InternalServerErrorException(`系统错误: ${error.message}`);
+  }
 }

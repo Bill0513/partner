@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { TaskService } from 'src/task/task.service';
 import { AuthUserDto } from '../auth/dto/auth.dto';
+import { errorHandler } from 'src/utils';
 
 @Injectable()
 export class UserService {
@@ -34,55 +35,62 @@ export class UserService {
       const user = await this.userRepository.save(userTemp);
       return user.id;
     } catch (error) {
-      throw new Error('创建用户失败'); // 抛出异常
+      errorHandler(error);
     }
   }
 
   async getProfile(userId: number) {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    const tasks = await this.taskService.findRecentlyInfo(userId);
-    let couple = {};
-    if (user.partnerId) {
-      couple = await this.userRepository.findOne({
-        select: {
-          id: true,
-          nickname: true,
-          avatar: true,
-        },
-        where: {
-          id: user.partnerId,
-        },
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
       });
-    }
+      const tasks = await this.taskService.findRecentlyInfo(userId);
+      let couple = {};
+      if (user.partnerId) {
+        couple = await this.userRepository.findOne({
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+          where: {
+            id: user.partnerId,
+          },
+        });
+      }
 
-    return {
-      id: user.id,
-      username: user.username,
-      nickname: user.nickname,
-      sex: user.sex,
-      uId: user.uId,
-      reward: user.reward,
-      taskDesc: tasks,
-      checkInDays: 0,
-      avatar: user.avatar,
-      couple,
-      bindingTime: user.bindingTime,
-    };
+      return {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname,
+        sex: user.sex,
+        uId: user.uId,
+        reward: user.reward,
+        taskDesc: tasks,
+        checkInDays: 0,
+        avatar: user.avatar,
+        couple,
+        bindingTime: user.bindingTime,
+      };
+    } catch (error) {
+      errorHandler(error);
+    }
   }
 
   async find({ username, id }: { username?: string; id?: number }) {
-    return await this.userRepository.findOne({
-      where: {
-        username,
-        id,
-      },
-    });
+    try {
+      return await this.userRepository.findOne({
+        where: {
+          username,
+          id,
+        },
+      });
+    } catch (error) {
+      errorHandler(error);
+    }
   }
 
   async setPartner(uId: string, userId: number) {
-    console.log(userId, 79);
     const queryRunner =
       this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
@@ -134,24 +142,27 @@ export class UserService {
       return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      // 直接重新抛出错误，保留原始错误信息
-      throw error;
+      errorHandler(error);
     } finally {
       await queryRunner.release();
     }
   }
 
   async getPartner(userId: number): Promise<number | null> {
-    const user = await this.userRepository.findOne({
-      where: {
-        id: userId,
-      },
-    });
+    try {
+      const user = await this.userRepository.findOne({
+        where: {
+          id: userId,
+        },
+      });
 
-    if (user.partnerId) {
-      return user.partnerId;
-    } else {
-      return null;
+      if (user.partnerId) {
+        return user.partnerId;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      errorHandler(error);
     }
   }
 }
