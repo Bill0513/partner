@@ -130,13 +130,13 @@ export class TaskService {
 
   async list(queryDto: TaskFindAllDto, userId: number) {
     try {
-      const { page, size, priority, onlyMe, sort, order } = queryDto;
+      const { page, size, status, onlyMe, sort, order } = queryDto;
       const queryBuilder = this.taskRepository.createQueryBuilder('task');
 
       const partnerId = await this.userService.getPartner(userId);
 
-      if (priority) {
-        queryBuilder.andWhere('task.priority = :priority', { priority });
+      if (status) {
+        queryBuilder.andWhere('task.status = :status', { status });
       }
 
       if (onlyMe) {

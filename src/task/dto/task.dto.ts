@@ -10,8 +10,8 @@ import { PaginationDto } from 'src/common.dto';
 
 export class TaskFindAllDto extends PaginationDto {
   @IsString()
-  @IsIn(['high', 'medium', 'low'])
-  priority: 'high' | 'medium' | 'low';
+  @IsIn(['pending', 'in-progress', 'completed'])
+  status: 'pending' | 'in-progress' | 'completed';
 
   @IsOptional()
   @IsBoolean()

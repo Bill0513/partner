@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SubTask } from './entities/sub_task.entity';
 import { CreateSubTaskDto } from './dto/create-sub_task.dto';
 import { UpdateSubTaskDto } from './dto/update-sub_task.dto';
 import { errorHandler } from 'src/utils';
+import { Task } from 'src/task/entities/task.entity';
 
 @Injectable()
 export class SubTaskService {
@@ -106,24 +107,47 @@ export class SubTaskService {
   }
 
   async complete(id: number, userId: number, userName: string) {
+    const queryRunner =
+      await this.subTaskRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const subTask = await this.subTaskRepository.findOne({
+      const subTask = await queryRunner.manager.findOne(SubTask, {
         where: {
           id,
         },
       });
 
       if (!subTask) {
-        throw new BadRequestException('子任务不存在');
+        throw new NotFoundException('子任务不存在');
       }
 
       subTask.status = 'completed';
       subTask.updateby = userId;
       subTask.updateName = userName;
-      await this.subTaskRepository.save(subTask);
+      await queryRunner.manager.update(SubTask, subTask.id, subTask);
+
+      const task = await queryRunner.manager.findOne(Task, {
+        where: {
+          id: subTask.taskId,
+        },
+      });
+
+      if (!task) {
+        throw new NotFoundException('任务不存在');
+      }
+
+      await queryRunner.manager.update(Task, task.id, task);
+
+      await queryRunner.commitTransaction();
+
       return true;
     } catch (error) {
       errorHandler(error);
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
 }
