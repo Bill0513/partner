@@ -9,7 +9,7 @@ import { ExchangeDto, ExchangeListDto } from './dto/exchange.dto';
 
 @Controller('reward')
 export class RewardController {
-  constructor(private readonly rewardService: RewardService) {}
+  constructor(private readonly rewardService: RewardService) { }
 
   @Post('create')
   @RequireLogin()
@@ -28,6 +28,12 @@ export class RewardController {
     @UserInfo('id') userId: number,
   ) {
     return await this.rewardService.list(queryDto, userId);
+  }
+
+  @Get('detail')
+  @RequireLogin()
+  async detail(@Query('id') id: number) {
+    return await this.rewardService.detail(id);
   }
 
   @Post('update')

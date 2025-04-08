@@ -7,7 +7,7 @@ import {
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { UpdateRewardDto } from './dto/update-reward.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Reward } from './entities/reward.entity';
+import { Reward, RewardStatus } from './entities/reward.entity';
 import { Repository } from 'typeorm';
 import { Rule } from './entities/rule.entity';
 import { RewardFindAllDto } from './dto/list-reward.dto';
@@ -17,7 +17,7 @@ import { RemoveRewardDto } from './dto/remove-reward.dto';
 import { ExchangeDto, ExchangeListDto } from './dto/exchange.dto';
 import { Exchange } from './entities/exchange.entity';
 import { User } from 'src/user/entities/user.entity';
-
+import { errorHandler } from 'src/utils';
 @Injectable()
 export class RewardService {
   constructor(
@@ -29,7 +29,7 @@ export class RewardService {
 
     @InjectRepository(Exchange)
     private exchangeRepository: Repository<Exchange>,
-  ) {}
+  ) { }
 
   async list(queryDto: RewardFindAllDto, userId: number) {
     try {
@@ -89,9 +89,29 @@ export class RewardService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException(`系统错误: ${error.message}`);
+      errorHandler(error);
     }
   }
+
+  async detail(id: number) {
+    const reward = await this.rewardRepository.findOne({
+      where: { id },
+    });
+
+    if (!reward) {
+      throw new NotFoundException('未找到');
+    }
+
+    const rules = await this.ruleRepository.find({
+      where: { rewardId: id },
+    });
+
+    return {
+      ...reward,
+      rules,
+    };
+  }
+
   async create(
     createRewardDto: CreateRewardDto,
     userId: number,
@@ -114,6 +134,10 @@ export class RewardService {
         createby: userId,
         totalNum: createRewardDto.totalNum,
         enableNum: createRewardDto.totalNum,
+        image: createRewardDto.image,
+        category: createRewardDto.category,
+        isHot: createRewardDto.isHot ? 1 : 0,
+        status: RewardStatus.PENDING,
       });
 
       if (tmpReward.validity === 'limited') {
@@ -205,6 +229,8 @@ export class RewardService {
       if (updateRewardDto.totalNum) {
         existReward.totalNum = updateRewardDto.totalNum;
       }
+
+      existReward.isHot = updateRewardDto.isHot;
 
       await queryRunner.manager.save(Reward, existReward);
 

@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-
+import { RewardCategory } from '../entities/reward.entity';
 export class CreateRuleDto {
   @IsString()
   @IsNotEmpty()
@@ -41,4 +41,16 @@ export class CreateRewardDto {
   @IsInt()
   @IsNotEmpty()
   totalNum: number;
+
+  @IsEnum(RewardCategory)
+  @IsNotEmpty()
+  category: RewardCategory;
+
+  @IsString()
+  @IsOptional()
+  image: string;
+
+  @IsInt()
+  @IsOptional()
+  isHot: number;
 }

@@ -6,6 +6,20 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum RewardCategory {
+  DATE = 'date',
+  FOOD = 'food',
+  SERVICE = 'service',
+  GIFT = 'gift',
+  OTHER = 'other',
+}
+
+export enum RewardStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+}
+
 @Entity()
 export class Reward {
   @PrimaryGeneratedColumn({ comment: 'id' })
@@ -19,6 +33,17 @@ export class Reward {
 
   @Column({ comment: '描述', nullable: true })
   description: string;
+
+  @Column({ comment: '图片', nullable: true })
+  image: string;
+
+  @Column({
+    comment: '分类',
+    type: 'enum',
+    enum: RewardCategory,
+    nullable: false,
+  })
+  category: RewardCategory;
 
   @Column({ comment: '开始日期', nullable: true })
   startDate: string;
@@ -40,11 +65,11 @@ export class Reward {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'completed'],
+    enum: RewardStatus,
     comment: '状态',
-    default: 'pending',
+    default: RewardStatus.PENDING,
   })
-  status: 'pending' | 'completed';
+  status: RewardStatus;
 
   @CreateDateColumn({ comment: '创建时间' })
   createtime: Date;
