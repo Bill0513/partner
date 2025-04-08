@@ -18,7 +18,7 @@ export class UserService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(forwardRef(() => TaskService))
     private readonly taskService: TaskService,
-  ) {}
+  ) { }
 
   async create(authUserDto: AuthUserDto) {
     try {

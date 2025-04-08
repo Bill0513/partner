@@ -8,7 +8,6 @@ import { Task } from './task/entities/task.entity';
 import { SubTask } from './sub_task/entities/sub_task.entity';
 import { TaskModule } from './task/task.module';
 import { SubTaskModule } from './sub_task/sub_task.module';
-import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -61,7 +60,6 @@ import { Exchange } from './reward/entities/exchange.entity';
     UserModule,
     TaskModule,
     SubTaskModule,
-    RedisModule,
     AuthModule,
     RewardModule,
   ],
@@ -74,4 +72,4 @@ import { Exchange } from './reward/entities/exchange.entity';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

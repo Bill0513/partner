@@ -29,7 +29,7 @@ export class TaskService {
     private subTaskService: SubTaskService,
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
-  ) {}
+  ) { }
   async create(createTaskDto: CreateTaskDto, userId: number, userName: string) {
     const queryRunner =
       this.taskRepository.manager.connection.createQueryRunner();
@@ -296,6 +296,7 @@ export class TaskService {
     completedTaskDto: CompletedTaskDto,
     userId: number,
     nickname: string,
+    username: string,
   ) {
     const queryRunner =
       await this.taskRepository.manager.connection.createQueryRunner();
@@ -332,7 +333,7 @@ export class TaskService {
       existTask.updateName = nickname;
 
       const user = await this.userService.find({
-        username: nickname,
+        username: username,
         id: userId,
       });
 

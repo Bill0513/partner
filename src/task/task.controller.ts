@@ -12,7 +12,7 @@ import {
 @Controller('task')
 export class TaskController {
   // eslint-disable-next-line prettier/prettier
-  constructor(private readonly taskService: TaskService) {}
+  constructor(private readonly taskService: TaskService) { }
 
   @RequireLogin()
   @Post('create')
@@ -52,8 +52,14 @@ export class TaskController {
     @Body() completedTaskDto: CompletedTaskDto,
     @UserInfo('id') userId: number,
     @UserInfo('nickname') nickname,
+    @UserInfo('username') username,
   ) {
-    return await this.taskService.completed(completedTaskDto, userId, nickname);
+    return await this.taskService.completed(
+      completedTaskDto,
+      userId,
+      nickname,
+      username,
+    );
   }
 
   @Post('delete')

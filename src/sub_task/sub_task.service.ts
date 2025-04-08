@@ -12,7 +12,7 @@ export class SubTaskService {
   constructor(
     @InjectRepository(SubTask)
     private readonly subTaskRepository: Repository<SubTask>,
-  ) {}
+  ) { }
   async create(
     createSubTaskDto: CreateSubTaskDto,
     taskId: number,
@@ -133,6 +133,10 @@ export class SubTaskService {
           id: subTask.taskId,
         },
       });
+
+      task.status = 'in-progress';
+      task.updateby = userId;
+      task.updateName = userName;
 
       if (!task) {
         throw new NotFoundException('任务不存在');
