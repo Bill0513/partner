@@ -1,10 +1,10 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsNotEmpty } from 'class-validator';
+import { IsInt, IsNotEmpty } from 'class-validator';
 import { PaginationDto } from 'src/common.dto';
 
 export class RewardFindAllDto extends PaginationDto {
   @IsNotEmpty()
-  @IsBoolean()
-  @Type(() => Boolean)
-  isMy: boolean;
+  @IsInt()
+  @Type(() => Number)
+  isMy: number;
 }

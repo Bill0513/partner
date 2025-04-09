@@ -29,20 +29,20 @@ export class RewardService {
 
     @InjectRepository(Exchange)
     private exchangeRepository: Repository<Exchange>,
-  ) {}
+  ) { }
 
   async list(queryDto: RewardFindAllDto, userId: number) {
     try {
-      const { page, size, sort, order, isMy = false } = queryDto;
+      const { page = 1, size = 10, sort, order, isMy = 1 } = queryDto;
       const queryBuilder = this.rewardRepository.createQueryBuilder('reward');
 
-      let partnerId: number;
+      let partnerId: number | null = null;
 
-      if (!isMy) {
+      if (isMy == 0) {
         partnerId = await this.userService.getPartner(userId);
       }
 
-      if (isMy) {
+      if (isMy == 1) {
         queryBuilder.andWhere('reward.createby = :createby', {
           createby: userId,
         });
@@ -56,8 +56,10 @@ export class RewardService {
             },
           );
         } else {
-          queryBuilder.andWhere('reward.createby = :createby', {
-            createby: userId,
+          // 当isMy为false且没有伴侣时，应该查询所有奖励或者只查询自己的
+          // 这里改为查询自己的奖励，避免查不到数据
+          queryBuilder.andWhere('reward.createby = :userId', {
+            userId: userId,
           });
         }
       }
