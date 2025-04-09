@@ -3,6 +3,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -11,6 +12,8 @@ import { User } from './entities/user.entity';
 import { TaskService } from 'src/task/task.service';
 import { AuthUserDto } from '../auth/dto/auth.dto';
 import { errorHandler } from 'src/utils';
+import { Factory } from 'vue3-avataaars';
+import { UpdateAvatarDto } from './dto/updateAvatar.dto';
 
 @Injectable()
 export class UserService {
@@ -18,7 +21,7 @@ export class UserService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(forwardRef(() => TaskService))
     private readonly taskService: TaskService,
-  ) { }
+  ) {}
 
   async create(authUserDto: AuthUserDto) {
     try {
@@ -31,6 +34,7 @@ export class UserService {
       userTemp.sex = sex;
       userTemp.password = await bcrypt.hash(password, 10);
       userTemp.uId = Math.random().toString(16).substr(2, 8).toUpperCase();
+      userTemp.avatar = JSON.stringify(Factory());
 
       const user = await this.userRepository.save(userTemp);
       return user.id;
@@ -161,6 +165,28 @@ export class UserService {
       } else {
         return null;
       }
+    } catch (error) {
+      errorHandler(error);
+    }
+  }
+
+  async updateAvatar(userId: number, updateAvatarDto: UpdateAvatarDto) {
+    try {
+      const existUser = await this.userRepository.findOne({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (!existUser) {
+        throw new NotFoundException('该用户不存在');
+      }
+
+      existUser.avatar = updateAvatarDto.avatar;
+
+      await this.userRepository.update(existUser.id, existUser);
+
+      return true;
     } catch (error) {
       errorHandler(error);
     }

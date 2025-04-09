@@ -1,7 +1,8 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { UpdateAvatarDto } from './dto/updateAvatar.dto';
 
 @Controller('user')
 @ApiBearerAuth()
@@ -19,5 +20,14 @@ export class UserController {
   @RequireLogin()
   async setPartner(@Query('uId') uId: string, @UserInfo('id') userId) {
     return await this.userService.setPartner(uId, userId);
+  }
+
+  @Post('update-avatar')
+  @RequireLogin()
+  async updateAvatar(
+    @Body() updateAvatarDto: UpdateAvatarDto,
+    @UserInfo('id') userId: number,
+  ) {
+    return await this.userService.updateAvatar(userId, updateAvatarDto);
   }
 }

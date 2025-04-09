@@ -29,7 +29,7 @@ export class RewardService {
 
     @InjectRepository(Exchange)
     private exchangeRepository: Repository<Exchange>,
-  ) { }
+  ) {}
 
   async list(queryDto: RewardFindAllDto, userId: number) {
     try {
@@ -250,7 +250,8 @@ export class RewardService {
         );
 
         if (deleteRuleIds.length) {
-          await queryRunner.manager.delete(Reward, deleteRuleIds);
+          const idsToDelete = deleteRuleIds.map((rule) => rule.id);
+          await queryRunner.manager.delete(Rule, idsToDelete);
         }
 
         for (const rule of updateRewardDto.rules) {

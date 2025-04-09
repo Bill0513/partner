@@ -23,7 +23,7 @@ export class User {
   @Column({ comment: '积分', nullable: true, default: 0 })
   reward: number;
 
-  @Column({ comment: '头像', nullable: true, default: null })
+  @Column({ comment: '头像', nullable: true, default: null, type: 'text' })
   avatar: string;
 
   @Column({ comment: '用户名', unique: true, nullable: false })

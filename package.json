@@ -40,7 +40,8 @@
     "redis": "^4.6.13",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "vue3-avataaars": "^1.0.15"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
