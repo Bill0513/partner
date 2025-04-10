@@ -6,6 +6,13 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum ExchangeStatus {
+  PENDING = 'pending', // 刚兑换
+  IN_PROGRESS = 'in-progress', // 进行中
+  COMPLETED = 'completed', // 完成
+  REJECT = 'reject', // 拒绝
+}
+
 @Entity()
 export class Exchange {
   @PrimaryGeneratedColumn({ comment: 'id' })
@@ -20,13 +27,16 @@ export class Exchange {
   @Column({ comment: '奖励标题' })
   rewardTitle: string;
 
+  @Column({ comment: '奖励描述' })
+  rewardDescription: string;
+
   @Column({
     type: 'enum',
-    enum: ['pending', 'completed'],
+    enum: ExchangeStatus,
     comment: '状态',
-    default: 'pending',
+    default: ExchangeStatus.PENDING,
   })
-  status: 'pending' | 'completed';
+  status: ExchangeStatus;
 
   @Column({ comment: '发布人id' })
   publishId: number;

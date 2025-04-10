@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SubTask } from './entities/sub_task.entity';
@@ -6,13 +6,15 @@ import { CreateSubTaskDto } from './dto/create-sub_task.dto';
 import { UpdateSubTaskDto } from './dto/update-sub_task.dto';
 import { errorHandler } from 'src/utils';
 import { Task } from 'src/task/entities/task.entity';
+import { BusinessException } from 'src/business-exception';
+import { SUB_TASK_CONSTANT, TASK_CONSTANT } from 'src/constants';
 
 @Injectable()
 export class SubTaskService {
   constructor(
     @InjectRepository(SubTask)
     private readonly subTaskRepository: Repository<SubTask>,
-  ) { }
+  ) {}
   async create(
     createSubTaskDto: CreateSubTaskDto,
     taskId: number,
@@ -120,7 +122,7 @@ export class SubTaskService {
       });
 
       if (!subTask) {
-        throw new NotFoundException('子任务不存在');
+        return BusinessException.notFound(SUB_TASK_CONSTANT.NOT_FOUND);
       }
 
       subTask.status = 'completed';
@@ -139,7 +141,7 @@ export class SubTaskService {
       task.updateName = userName;
 
       if (!task) {
-        throw new NotFoundException('任务不存在');
+        return BusinessException.notFound(TASK_CONSTANT.NOT_FOUND);
       }
 
       await queryRunner.manager.update(Task, task.id, task);

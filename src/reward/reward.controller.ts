@@ -5,11 +5,15 @@ import { UpdateRewardDto } from './dto/update-reward.dto';
 import { RequireLogin, UserInfo } from 'src/custom.decorator';
 import { RewardFindAllDto } from './dto/list-reward.dto';
 import { RemoveRewardDto } from './dto/remove-reward.dto';
-import { ExchangeDto, ExchangeListDto } from './dto/exchange.dto';
+import {
+  ExchangeDto,
+  ExchangeListDto,
+  ExchangeOperationDto,
+} from './dto/exchange.dto';
 
 @Controller('reward')
 export class RewardController {
-  constructor(private readonly rewardService: RewardService) { }
+  constructor(private readonly rewardService: RewardService) {}
 
   @Post('create')
   @RequireLogin()
@@ -63,6 +67,20 @@ export class RewardController {
     @UserInfo('nickname') userName: string,
   ) {
     return await this.rewardService.exchange(exchangeDto, userId, userName);
+  }
+
+  @Post('exchange/operation')
+  @RequireLogin()
+  async exchangeOperation(
+    @Body() exchangeOperationDto: ExchangeOperationDto,
+    @UserInfo('id') userId: number,
+    @UserInfo('nickname') userName: string,
+  ) {
+    return await this.rewardService.exchangeOperation(
+      exchangeOperationDto,
+      userId,
+      userName,
+    );
   }
 
   @Post('remove')

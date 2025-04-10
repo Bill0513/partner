@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
@@ -16,11 +10,12 @@ import {
   RemoveTaskDto,
   TaskFindAllDto,
 } from './dto/task.dto';
-import { ALLOWED_SORT_FIELDS } from 'src/constants';
+import { ALLOWED_SORT_FIELDS, TASK_CONSTANT } from 'src/constants';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/entities/user.entity';
 import { SubTask } from 'src/sub_task/entities/sub_task.entity';
 import { errorHandler } from 'src/utils';
+import { BusinessException } from 'src/business-exception';
 @Injectable()
 export class TaskService {
   constructor(
@@ -29,7 +24,7 @@ export class TaskService {
     private subTaskService: SubTaskService,
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
-  ) { }
+  ) {}
   async create(createTaskDto: CreateTaskDto, userId: number, userName: string) {
     const queryRunner =
       this.taskRepository.manager.connection.createQueryRunner();
@@ -199,7 +194,7 @@ export class TaskService {
       });
 
       if (!task) {
-        throw new BadRequestException('该任务不存在');
+        return BusinessException.badRequest(TASK_CONSTANT.NOT_FOUND);
       }
 
       const subTasks = await this.subTaskService.findByTaskId(task.id);
@@ -225,11 +220,11 @@ export class TaskService {
       });
 
       if (!task) {
-        throw new NotFoundException(`该任务不存在`);
+        return BusinessException.notFound(TASK_CONSTANT.NOT_FOUND);
       }
 
       if (task.createby !== userId) {
-        throw new BadRequestException(`这不是你创建的任务`);
+        return BusinessException.badRequest(TASK_CONSTANT.NO_TASK_MY);
       }
 
       // 更新任务属性
@@ -311,7 +306,7 @@ export class TaskService {
       });
 
       if (!existTask) {
-        throw new NotFoundException('未找到任务');
+        return BusinessException.notFound(TASK_CONSTANT.NOT_FOUND);
       }
 
       const subTasks = await queryRunner.manager.find(SubTask, {
@@ -325,7 +320,9 @@ export class TaskService {
       );
 
       if (!allSubTasksCompleted) {
-        throw new BadRequestException('还有子任务没有完成哦');
+        return BusinessException.badRequest(
+          TASK_CONSTANT.EXIST_SUB_TASK_NO_COMPLETE,
+        );
       }
 
       existTask.status = 'completed';
@@ -340,7 +337,7 @@ export class TaskService {
       await queryRunner.manager.update(Task, existTask.id, existTask);
 
       if (!user) {
-        throw new NotFoundException('用户不存在');
+        return BusinessException.notFound(TASK_CONSTANT.NO_COMPLETE_USER);
       }
 
       await queryRunner.manager.update(User, user.id, {

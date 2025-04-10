@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { UpdateRewardDto } from './dto/update-reward.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,12 +7,19 @@ import { Repository } from 'typeorm';
 import { Rule } from './entities/rule.entity';
 import { RewardFindAllDto } from './dto/list-reward.dto';
 import { UserService } from 'src/user/user.service';
-import { ALLOWED_SORT_FIELDS } from 'src/constants';
+import { ALLOWED_SORT_FIELDS, REWARD_CONSTANT } from 'src/constants';
 import { RemoveRewardDto } from './dto/remove-reward.dto';
-import { ExchangeDto, ExchangeListDto } from './dto/exchange.dto';
-import { Exchange } from './entities/exchange.entity';
+import {
+  ExchangeDto,
+  ExchangeListDto,
+  ExchangeOperationDto,
+  OperationType,
+} from './dto/exchange.dto';
+import { Exchange, ExchangeStatus } from './entities/exchange.entity';
 import { User } from 'src/user/entities/user.entity';
 import { errorHandler } from 'src/utils';
+import { BusinessException } from 'src/business-exception';
+import dayjs from 'dayjs';
 @Injectable()
 export class RewardService {
   constructor(
@@ -29,7 +31,7 @@ export class RewardService {
 
     @InjectRepository(Exchange)
     private exchangeRepository: Repository<Exchange>,
-  ) { }
+  ) {}
 
   async list(queryDto: RewardFindAllDto, userId: number) {
     try {
@@ -101,7 +103,7 @@ export class RewardService {
     });
 
     if (!reward) {
-      throw new NotFoundException('未找到');
+      return BusinessException.notFound(REWARD_CONSTANT.NOT_FOUND);
     }
 
     const rules = await this.ruleRepository.find({
@@ -170,7 +172,7 @@ export class RewardService {
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('创建失败: ' + error.message);
+      errorHandler(error);
     } finally {
       await queryRunner.release();
     }
@@ -195,7 +197,7 @@ export class RewardService {
       });
 
       if (!existReward) {
-        throw new NotFoundException(`找不到ID为${updateRewardDto.id}的奖励`);
+        return BusinessException.notFound(REWARD_CONSTANT.NOT_FOUND);
       }
 
       existReward.updateName = userName;
@@ -295,7 +297,7 @@ export class RewardService {
         },
       });
       if (!existReward) {
-        throw new NotFoundException(`找不到ID为${id}的奖励`);
+        return BusinessException.notFound(REWARD_CONSTANT.NOT_FOUND);
       }
 
       const hotReward = await this.rewardRepository.findOne({
@@ -317,7 +319,7 @@ export class RewardService {
 
       return true;
     } catch (error) {
-      throw new InternalServerErrorException(`系统错误: ${error.message}`);
+      errorHandler(error);
     }
   }
 
@@ -332,14 +334,14 @@ export class RewardService {
       });
 
       if (!existReward) {
-        throw new NotFoundException('未找到');
+        return BusinessException.notFound(REWARD_CONSTANT.NOT_FOUND);
       }
 
       await this.rewardRepository.remove(existReward);
 
       return true;
     } catch (error) {
-      throw new InternalServerErrorException('系统错误: ' + error.message);
+      errorHandler(error);
     }
   }
 
@@ -356,11 +358,20 @@ export class RewardService {
       });
 
       if (!existReward) {
-        throw new NotFoundException('未找到奖励');
+        return BusinessException.notFound(REWARD_CONSTANT.NOT_FOUND);
+      }
+
+      if (existReward.validity === 'limited') {
+        if (
+          dayjs().isBefore(dayjs(existReward.startDate)) ||
+          dayjs().isAfter(dayjs(existReward.endDate))
+        ) {
+          return BusinessException.badRequest(REWARD_CONSTANT.OVER_DATE);
+        }
       }
 
       if (existReward.enableNum === 0) {
-        throw new BadRequestException('数量不够兑换');
+        return BusinessException.badRequest(REWARD_CONSTANT.NO_ENABLE_NUM);
       }
 
       const user = await this.userService.find({
@@ -369,11 +380,11 @@ export class RewardService {
       });
 
       if (!user) {
-        throw new NotFoundException('用户不存在');
+        return BusinessException.notFound(REWARD_CONSTANT.NO_EXCHANGE_USER);
       }
 
       if (user.reward < existReward.reward) {
-        throw new BadRequestException('钱不够兑换该奖励');
+        return BusinessException.badRequest(REWARD_CONSTANT.NO_EXCHANGE_MONEY);
       }
 
       await queryRunner.manager.update(User, userId, {
@@ -382,6 +393,10 @@ export class RewardService {
 
       await queryRunner.manager.update(Reward, exchangeDto.id, {
         enableNum: existReward.enableNum - 1,
+        status:
+          existReward.enableNum - 1 === 0
+            ? RewardStatus.COMPLETED
+            : RewardStatus.IN_PROGRESS,
       });
 
       const exchange = await queryRunner.manager.create(Exchange, {
@@ -392,7 +407,7 @@ export class RewardService {
         publishName: existReward.createName,
         createby: userId,
         createName: userName,
-        status: 'pending',
+        status: ExchangeStatus.PENDING,
       });
 
       await queryRunner.manager.save(exchange);
@@ -414,9 +429,15 @@ export class RewardService {
       const queryBuilder =
         this.exchangeRepository.createQueryBuilder('exchange');
 
-      queryBuilder.andWhere('exchange.createby = :createby', {
-        createby: userId,
-      });
+      const partnerId = await this.userService.getPartner(userId);
+
+      queryBuilder.andWhere(
+        'exchange.createby = :createby OR exchange.createby = :partnerId',
+        {
+          createby: userId,
+          partnerId: partnerId,
+        },
+      );
 
       const sortField = ALLOWED_SORT_FIELDS.includes(sort)
         ? sort
@@ -446,6 +467,43 @@ export class RewardService {
       };
     } catch (error) {
       throw error;
+    }
+  }
+
+  async exchangeOperation(
+    exchangeOperationDto: ExchangeOperationDto,
+    userId: number,
+    userName: string,
+  ) {
+    try {
+      const { id, type } = exchangeOperationDto;
+
+      const existExchange = await this.exchangeRepository.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!existExchange) {
+        return BusinessException.notFound(REWARD_CONSTANT.NOT_FOUND_EXCHANGE);
+      }
+
+      if (type === OperationType.CONFIRM) {
+        existExchange.status = ExchangeStatus.IN_PROGRESS;
+      } else if (type === OperationType.COMPLETED) {
+        existExchange.status = ExchangeStatus.COMPLETED;
+      } else {
+        existExchange.status = ExchangeStatus.REJECT;
+      }
+
+      existExchange.updateby = userId;
+      existExchange.updateName = userName;
+
+      await this.exchangeRepository.update(existExchange.id, existExchange);
+
+      return true;
+    } catch (error) {
+      errorHandler(error);
     }
   }
 }

@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -14,6 +8,8 @@ import { AuthUserDto } from '../auth/dto/auth.dto';
 import { errorHandler } from 'src/utils';
 import { Factory } from 'vue3-avataaars';
 import { UpdateAvatarDto } from './dto/updateAvatar.dto';
+import { BusinessException } from 'src/business-exception';
+import { USER_CONSTANT } from 'src/constants';
 
 @Injectable()
 export class UserService {
@@ -106,7 +102,7 @@ export class UserService {
       });
 
       if (!tempUser) {
-        throw new BadRequestException('绑定码无效');
+        return BusinessException.badRequest(USER_CONSTANT.UID_ERROR);
       }
 
       const tempUser2 = await this.userRepository.findOne({
@@ -114,20 +110,20 @@ export class UserService {
       });
 
       if (!tempUser2) {
-        throw new BadRequestException('用户不存在');
+        return BusinessException.badRequest(USER_CONSTANT.NOT_FOUND);
       }
 
       if (tempUser.id === tempUser2.id) {
-        throw new BadRequestException('不能绑定自己');
+        return BusinessException.badRequest(USER_CONSTANT.NO_BINGDING_MY);
       }
 
       // 检查是否已有伴侣
       if (tempUser.partnerId) {
-        throw new BadRequestException('绑定码用户已有伴侣');
+        return BusinessException.badRequest(USER_CONSTANT.EXIST_PARTNER);
       }
 
       if (tempUser2.partnerId) {
-        throw new BadRequestException('当前用户已有伴侣');
+        return BusinessException.badRequest(USER_CONSTANT.EXIST_PARTNER2);
       }
 
       const bindingTime = new Date();
@@ -179,7 +175,7 @@ export class UserService {
       });
 
       if (!existUser) {
-        throw new NotFoundException('该用户不存在');
+        return BusinessException.notFound(USER_CONSTANT.NOT_FOUND);
       }
 
       existUser.avatar = updateAvatarDto.avatar;
