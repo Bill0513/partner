@@ -19,7 +19,8 @@ import { Exchange, ExchangeStatus } from './entities/exchange.entity';
 import { User } from 'src/user/entities/user.entity';
 import { errorHandler } from 'src/utils';
 import { BusinessException } from 'src/business-exception';
-import dayjs from 'dayjs';
+import * as dayjs from 'dayjs';
+
 @Injectable()
 export class RewardService {
   constructor(
@@ -49,21 +50,9 @@ export class RewardService {
           createby: userId,
         });
       } else {
-        if (partnerId) {
-          queryBuilder.andWhere(
-            '(reward.createby = :userId OR reward.createby = :partnerId)',
-            {
-              userId: userId,
-              partnerId: partnerId,
-            },
-          );
-        } else {
-          // 当isMy为false且没有伴侣时，应该查询所有奖励或者只查询自己的
-          // 这里改为查询自己的奖励，避免查不到数据
-          queryBuilder.andWhere('reward.createby = :userId', {
-            userId: userId,
-          });
-        }
+        queryBuilder.andWhere('(reward.createby = :partnerId)', {
+          partnerId: partnerId,
+        });
       }
 
       const sortField = ALLOWED_SORT_FIELDS.includes(sort)
@@ -403,6 +392,7 @@ export class RewardService {
         reward: existReward.reward,
         rewardId: existReward.id,
         rewardTitle: existReward.title,
+        rewardDescription: existReward.description,
         publishId: existReward.createby,
         publishName: existReward.createName,
         createby: userId,
