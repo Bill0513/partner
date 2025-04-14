@@ -20,6 +20,7 @@ import { User } from 'src/user/entities/user.entity';
 import { errorHandler } from 'src/utils';
 import { BusinessException } from 'src/business-exception';
 import * as dayjs from 'dayjs';
+import { MessageService } from 'src/message/message.service';
 
 @Injectable()
 export class RewardService {
@@ -32,6 +33,7 @@ export class RewardService {
 
     @InjectRepository(Exchange)
     private exchangeRepository: Repository<Exchange>,
+    private readonly messageService: MessageService,
   ) {}
 
   async list(queryDto: RewardFindAllDto, userId: number) {
@@ -153,6 +155,14 @@ export class RewardService {
           await queryRunner.manager.save(Rule, tmpRule);
         }
       }
+
+      const partnerId = await this.userService.getPartner(userId);
+
+      await this.messageService.sendRewardMessage(
+        partnerId,
+        '奖励上新',
+        `您的伴侣发布了新的奖励《${tmpReward.title}》，点击按钮可查看详情！`,
+      );
 
       // Commit the transaction
       await queryRunner.commitTransaction();
@@ -402,6 +412,12 @@ export class RewardService {
 
       await queryRunner.manager.save(exchange);
 
+      await this.messageService.sendRewardMessage(
+        exchange.publishId,
+        '新增兑换',
+        `您发布的奖励《${exchange.rewardTitle}》，已被兑换！`,
+      );
+
       await queryRunner.commitTransaction();
 
       return true;
@@ -490,6 +506,26 @@ export class RewardService {
       existExchange.updateName = userName;
 
       await this.exchangeRepository.update(existExchange.id, existExchange);
+
+      if (type === OperationType.REJECT) {
+        await this.messageService.sendRewardMessage(
+          existExchange.createby,
+          '拒绝兑换',
+          `您兑换的《${existExchange.rewardTitle}》已被发布者拒绝兑换！`,
+        );
+      } else if (type === OperationType.COMPLETED) {
+        await this.messageService.sendRewardMessage(
+          existExchange.createby,
+          '完成兑换',
+          `您兑换的《${existExchange.rewardTitle}》已被发布者兑现完成！`,
+        );
+      } else {
+        await this.messageService.sendRewardMessage(
+          existExchange.createby,
+          '已确认奖励',
+          `发布者已确认您兑换的《${existExchange.rewardTitle}》，请静待兑现！`,
+        );
+      }
 
       return true;
     } catch (error) {

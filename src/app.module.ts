@@ -17,6 +17,7 @@ import { RewardModule } from './reward/reward.module';
 import { Reward } from './reward/entities/reward.entity';
 import { Rule } from './reward/entities/rule.entity';
 import { Exchange } from './reward/entities/exchange.entity';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { Exchange } from './reward/entities/exchange.entity';
     SubTaskModule,
     AuthModule,
     RewardModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [
@@ -72,4 +74,4 @@ import { Exchange } from './reward/entities/exchange.entity';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -29,3 +29,10 @@ export const USER_CONSTANT = {
   EXIST_PARTNER: '绑定用户已有伴侣',
   EXIST_PARTNER2: '你已有伴侣',
 };
+
+export enum MessageType {
+  TASK = 'task',
+  USER = 'user',
+  REWARD = 'reward',
+  SYSTEM = 'system',
+}

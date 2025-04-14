@@ -16,6 +16,7 @@ import { User } from 'src/user/entities/user.entity';
 import { SubTask } from 'src/sub_task/entities/sub_task.entity';
 import { errorHandler } from 'src/utils';
 import { BusinessException } from 'src/business-exception';
+import { MessageService } from 'src/message/message.service';
 @Injectable()
 export class TaskService {
   constructor(
@@ -24,6 +25,7 @@ export class TaskService {
     private subTaskService: SubTaskService,
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
+    private readonly messageService: MessageService,
   ) {}
   async create(createTaskDto: CreateTaskDto, userId: number, userName: string) {
     const queryRunner =
@@ -343,6 +345,18 @@ export class TaskService {
       await queryRunner.manager.update(User, user.id, {
         reward: user.reward + existTask.reward,
       });
+
+      await this.messageService.sendTaskMessage(
+        existTask.createby,
+        '任务完成',
+        `您发布的任务《${existTask.title}》已被完成！点击按钮可查看详情！ `,
+      );
+
+      await this.messageService.sendTaskMessage(
+        userId,
+        '任务完成',
+        `您完成了任务《${existTask.title}》！点击按钮可查看详情！ `,
+      );
 
       await queryRunner.commitTransaction();
 

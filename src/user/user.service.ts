@@ -10,6 +10,7 @@ import { Factory } from 'vue3-avataaars';
 import { UpdateAvatarDto } from './dto/updateAvatar.dto';
 import { BusinessException } from 'src/business-exception';
 import { USER_CONSTANT } from 'src/constants';
+import { MessageService } from 'src/message/message.service';
 
 @Injectable()
 export class UserService {
@@ -17,6 +18,7 @@ export class UserService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(forwardRef(() => TaskService))
     private readonly taskService: TaskService,
+    private readonly messageService: MessageService,
   ) {}
 
   async create(authUserDto: AuthUserDto) {
@@ -137,6 +139,17 @@ export class UserService {
         partnerId: tempUser.id,
         bindingTime: bindingTime,
       });
+
+      await this.messageService.sendUserMessage(
+        tempUser.id,
+        '伴侣绑定成功',
+        `绑定成功！${tempUser2.nickname} 已成为您的新伴侣！`,
+      );
+      await this.messageService.sendUserMessage(
+        tempUser2.id,
+        '伴侣绑定成功',
+        `绑定成功！${tempUser.nickname} 已成为您的新伴侣！`,
+      );
 
       await queryRunner.commitTransaction();
       return true;
