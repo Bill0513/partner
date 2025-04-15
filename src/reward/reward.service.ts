@@ -21,6 +21,8 @@ import { errorHandler } from 'src/utils';
 import { BusinessException } from 'src/business-exception';
 import * as dayjs from 'dayjs';
 import { MessageService } from 'src/message/message.service';
+import { LikeAction, LikeRewardDto } from './dto/like-reward.dto';
+import { RewardLike } from './entities/reward-like.entity';
 
 @Injectable()
 export class RewardService {
@@ -33,6 +35,9 @@ export class RewardService {
 
     @InjectRepository(Exchange)
     private exchangeRepository: Repository<Exchange>,
+
+    @InjectRepository(RewardLike)
+    private rewardLikeRepository: Repository<RewardLike>,
     private readonly messageService: MessageService,
   ) {}
 
@@ -101,9 +106,16 @@ export class RewardService {
       where: { rewardId: id },
     });
 
+    const like = await this.rewardLikeRepository.findOne({
+      where: {
+        rewardId: reward.id,
+      },
+    });
+
     return {
       ...reward,
       rules,
+      like: like ? 1 : 0,
     };
   }
 
@@ -525,6 +537,33 @@ export class RewardService {
           '已确认奖励',
           `发布者已确认您兑换的《${existExchange.rewardTitle}》，请静待兑现！`,
         );
+      }
+
+      return true;
+    } catch (error) {
+      errorHandler(error);
+    }
+  }
+
+  async toggleLike(dto: LikeRewardDto, userId: number) {
+    try {
+      const { rewardId, action } = dto;
+
+      const reward = await this.rewardRepository.findOne({
+        where: { id: rewardId },
+      });
+      if (!reward) throw BusinessException.notFound('该奖励不存在！');
+      const exist = await this.rewardLikeRepository.findOne({
+        where: { userId, rewardId },
+      });
+      if (action === LikeAction.LIKE) {
+        if (!exist) {
+          await this.rewardLikeRepository.save({ userId, rewardId });
+        }
+      } else {
+        if (exist) {
+          await this.rewardLikeRepository.remove(exist);
+        }
       }
 
       return true;

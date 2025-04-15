@@ -10,6 +10,7 @@ import {
   ExchangeListDto,
   ExchangeOperationDto,
 } from './dto/exchange.dto';
+import { LikeRewardDto } from './dto/like-reward.dto';
 
 @Controller('reward')
 export class RewardController {
@@ -97,5 +98,11 @@ export class RewardController {
     @UserInfo('nickname') userName: string,
   ) {
     return await this.rewardService.hot(id, userId, userName);
+  }
+
+  @Post('like')
+  @RequireLogin()
+  async like(@Body() dto: LikeRewardDto, @UserInfo('id') userId: number) {
+    return await this.rewardService.toggleLike(dto, userId);
   }
 }

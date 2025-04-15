@@ -5,6 +5,7 @@ import { SubTaskModule } from 'src/sub_task/sub_task.module';
 import { TaskController } from './task.controller';
 import { TaskService } from './task.service';
 import { UserModule } from 'src/user/user.module';
+import { MessageModule } from 'src/message/message.module';
 // import { UserModule } from 'src/user/user.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { UserModule } from 'src/user/user.module';
     TypeOrmModule.forFeature([Task]),
     SubTaskModule,
     forwardRef(() => UserModule),
+    MessageModule,
   ],
   controllers: [TaskController],
   providers: [TaskService],

@@ -18,6 +18,8 @@ import { Reward } from './reward/entities/reward.entity';
 import { Rule } from './reward/entities/rule.entity';
 import { Exchange } from './reward/entities/exchange.entity';
 import { MessageModule } from './message/message.module';
+import { RewardLike } from './reward/entities/reward-like.entity';
+import { Message } from './message/entities/message.entity';
 
 @Module({
   imports: [
@@ -36,7 +38,16 @@ import { MessageModule } from './message/message.module';
           database: configService.get('mysql_server_database'),
           synchronize: true,
           logging: true,
-          entities: [User, Task, SubTask, Reward, Rule, Exchange],
+          entities: [
+            User,
+            Task,
+            SubTask,
+            Reward,
+            Rule,
+            Exchange,
+            RewardLike,
+            Message,
+          ],
           poolSize: 10,
           connectorPackage: 'mysql2',
           extra: {

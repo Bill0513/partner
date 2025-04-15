@@ -4,9 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { MessageType } from 'src/constants';
+import { ALLOWED_SORT_FIELDS, MessageType } from 'src/constants';
 import { errorHandler } from 'src/utils';
 import { BusinessException } from 'src/business-exception';
+import { MessageListDto } from './dto/message.dto';
 
 @Injectable()
 export class MessageService {
@@ -33,7 +34,7 @@ export class MessageService {
   async findAllByUserId(userId: number): Promise<Message[]> {
     return await this.messageRepository.find({
       where: { userId },
-      order: { createdAt: 'DESC' },
+      order: { createtime: 'DESC' },
     });
   }
 
@@ -43,7 +44,7 @@ export class MessageService {
   async findUnreadByUserId(userId: number): Promise<Message[]> {
     return await this.messageRepository.find({
       where: { userId, isRead: false },
-      order: { createdAt: 'DESC' },
+      order: { createtime: 'DESC' },
     });
   }
 
@@ -179,5 +180,28 @@ export class MessageService {
     }));
 
     await this.messageRepository.insert(messages);
+  }
+
+  async messageList(dto: MessageListDto, userId: number) {
+    const { page, size, sort, order } = dto;
+    const queryBuilder = this.messageRepository.createQueryBuilder('message');
+    // 根据业务逻辑, 这里假设查本人相关的消息
+    queryBuilder.where('message.userId = :userId', { userId });
+    const sortField = ALLOWED_SORT_FIELDS.includes(sort) ? sort : 'createtime';
+    const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+    queryBuilder.orderBy(`message.${sortField}`, sortOrder);
+    const total = await queryBuilder.getCount();
+    queryBuilder.skip((page - 1) * size).take(size);
+    const list = await queryBuilder.getMany();
+    const isLast = page * size >= total;
+    return {
+      list,
+      meta: {
+        page,
+        size,
+        total,
+        isLast,
+      },
+    };
   }
 }

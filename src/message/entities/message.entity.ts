@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('messages')
+@Entity()
 export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -28,9 +28,9 @@ export class Message {
   @Column({ nullable: true })
   userId: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ comment: '创建时间' })
+  createtime: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ comment: '更新时间' })
+  updatetime: Date;
 }
