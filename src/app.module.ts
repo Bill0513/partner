@@ -20,6 +20,7 @@ import { Exchange } from './reward/entities/exchange.entity';
 import { MessageModule } from './message/message.module';
 import { RewardLike } from './reward/entities/reward-like.entity';
 import { Message } from './message/entities/message.entity';
+import { AiGeneratorModule } from './ai-generator/ai-generator.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { Message } from './message/entities/message.entity';
     AuthModule,
     RewardModule,
     MessageModule,
+    AiGeneratorModule,
   ],
   controllers: [AppController],
   providers: [
