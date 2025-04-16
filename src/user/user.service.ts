@@ -140,12 +140,12 @@ export class UserService {
         bindingTime: bindingTime,
       });
 
-      await this.messageService.sendUserMessage(
+      await this.messageService.sendSystemMessage(
         tempUser.id,
         '伴侣绑定成功',
         `绑定成功！${tempUser2.nickname} 已成为您的新伴侣！`,
       );
-      await this.messageService.sendUserMessage(
+      await this.messageService.sendSystemMessage(
         tempUser2.id,
         '伴侣绑定成功',
         `绑定成功！${tempUser.nickname} 已成为您的新伴侣！`,

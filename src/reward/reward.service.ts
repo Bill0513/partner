@@ -174,6 +174,9 @@ export class RewardService {
         partnerId,
         '奖励上新',
         `您的伴侣发布了新的奖励《${tmpReward.title}》，点击按钮可查看详情！`,
+        {
+          rewardId: tmpReward.id,
+        },
       );
 
       // Commit the transaction
@@ -428,6 +431,10 @@ export class RewardService {
         exchange.publishId,
         '新增兑换',
         `您发布的奖励《${exchange.rewardTitle}》，已被兑换！`,
+        {
+          exchangeId: exchange.id,
+          rewardId: exchange.rewardId,
+        },
       );
 
       await queryRunner.commitTransaction();
@@ -524,18 +531,30 @@ export class RewardService {
           existExchange.createby,
           '拒绝兑换',
           `您兑换的《${existExchange.rewardTitle}》已被发布者拒绝兑换！`,
+          {
+            exchangeId: existExchange.id,
+            rewardId: existExchange.rewardId,
+          },
         );
       } else if (type === OperationType.COMPLETED) {
         await this.messageService.sendRewardMessage(
           existExchange.createby,
           '完成兑换',
           `您兑换的《${existExchange.rewardTitle}》已被发布者兑现完成！`,
+          {
+            exchangeId: existExchange.id,
+            rewardId: existExchange.rewardId,
+          },
         );
       } else {
         await this.messageService.sendRewardMessage(
           existExchange.createby,
           '已确认奖励',
           `发布者已确认您兑换的《${existExchange.rewardTitle}》，请静待兑现！`,
+          {
+            exchangeId: existExchange.id,
+            rewardId: existExchange.rewardId,
+          },
         );
       }
 

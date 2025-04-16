@@ -350,12 +350,18 @@ export class TaskService {
         existTask.createby,
         '任务完成',
         `您发布的任务《${existTask.title}》已被完成！点击按钮可查看详情！ `,
+        {
+          taskId: existTask.id,
+        },
       );
 
       await this.messageService.sendTaskMessage(
         userId,
         '任务完成',
         `您完成了任务《${existTask.title}》！点击按钮可查看详情！ `,
+        {
+          taskId: existTask.id,
+        },
       );
 
       await queryRunner.commitTransaction();

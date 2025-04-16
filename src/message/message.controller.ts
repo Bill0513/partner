@@ -15,4 +15,16 @@ export class MessageController {
   ) {
     return await this.messageService.messageList(messageListDto, userId);
   }
+
+  @Get('read')
+  @RequireLogin()
+  async markAsRead(@Query('id') id: string) {
+    return await this.messageService.markAsRead(id);
+  }
+
+  @Get('readAll')
+  @RequireLogin()
+  async markAllAsRead(@UserInfo('id') userId: number) {
+    return await this.messageService.markAllAsRead(userId);
+  }
 }

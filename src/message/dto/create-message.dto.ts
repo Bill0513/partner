@@ -1,4 +1,5 @@
 // src/message/dto/create-message.dto.ts
+import { Optional } from '@nestjs/common';
 import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
 import { MessageType } from 'src/constants';
 
@@ -17,4 +18,7 @@ export class CreateMessageDto {
   @IsInt()
   @IsNotEmpty()
   userId: number;
+
+  @Optional()
+  condition?: Record<string, any>;
 }

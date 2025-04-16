@@ -62,7 +62,11 @@ export class MessageService {
       if (!existMessage) {
         return BusinessException.notFound('此消息不存在');
       }
-      await this.messageRepository.update(messageId, { isRead: true });
+
+      await this.messageRepository.update(messageId, {
+        isRead: true,
+        updatetime: new Date(),
+      });
 
       return true;
     } catch (error) {
@@ -112,12 +116,14 @@ export class MessageService {
     userId: number,
     title: string,
     content: string,
+    condition: Record<string, any>,
   ): Promise<Message> {
     return this.create({
       type: MessageType.TASK,
       title,
       content,
       userId,
+      condition,
     });
   }
 
@@ -154,12 +160,14 @@ export class MessageService {
     userId: number,
     title: string,
     content: string,
+    condition: Record<string, any>,
   ): Promise<Message> {
     return this.create({
       type: MessageType.REWARD,
       title,
       content,
       userId,
+      condition,
     });
   }
 
@@ -183,10 +191,17 @@ export class MessageService {
   }
 
   async messageList(dto: MessageListDto, userId: number) {
-    const { page, size, sort, order } = dto;
+    const { page, size, sort, order, type } = dto;
     const queryBuilder = this.messageRepository.createQueryBuilder('message');
     // 根据业务逻辑, 这里假设查本人相关的消息
     queryBuilder.where('message.userId = :userId', { userId });
+    if (
+      type === MessageType.REWARD ||
+      type === MessageType.SYSTEM ||
+      type === MessageType.TASK
+    ) {
+      queryBuilder.where('message.type = :type', { type });
+    }
     const sortField = ALLOWED_SORT_FIELDS.includes(sort) ? sort : 'createtime';
     const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
     queryBuilder.orderBy(`message.${sortField}`, sortOrder);

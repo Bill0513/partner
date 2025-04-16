@@ -28,6 +28,9 @@ export class Message {
   @Column({ nullable: true })
   userId: number;
 
+  @Column({ type: 'json', nullable: true })
+  condition: Record<string, any>;
+
   @CreateDateColumn({ comment: '创建时间' })
   createtime: Date;
 
