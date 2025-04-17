@@ -11,6 +11,8 @@ import { UpdateAvatarDto } from './dto/updateAvatar.dto';
 import { BusinessException } from 'src/business-exception';
 import { USER_CONSTANT } from 'src/constants';
 import { MessageService } from 'src/message/message.service';
+import { LoginLog } from './entities/login-log.entity';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class UserService {
@@ -19,6 +21,9 @@ export class UserService {
     @Inject(forwardRef(() => TaskService))
     private readonly taskService: TaskService,
     private readonly messageService: MessageService,
+
+    @InjectRepository(LoginLog)
+    private loginLogRepository: Repository<LoginLog>,
   ) {}
 
   async create(authUserDto: AuthUserDto) {
@@ -61,6 +66,9 @@ export class UserService {
         });
       }
 
+      // ✅ 获取连续打卡天数
+      const checkInDays = await this.getStreakDays(userId);
+
       return {
         id: user.id,
         username: user.username,
@@ -69,7 +77,7 @@ export class UserService {
         uId: user.uId,
         reward: user.reward,
         taskDesc: tasks,
-        checkInDays: 0,
+        checkInDays: checkInDays,
         avatar: user.avatar,
         couple,
         bindingTime: user.bindingTime,
@@ -284,5 +292,68 @@ export class UserService {
     } catch (error) {
       errorHandler(error);
     }
+  }
+
+  /**
+   * 1. 记录用户当天第一次登录（只有当天没打过卡才会记录）
+   * 成功时返回 `isFirstLoginToday: true`，否则返回 `false`
+   */
+  async recordLogin(userId: number): Promise<{ isFirstLoginToday: boolean }> {
+    try {
+      const today = dayjs().format('YYYY-MM-DD');
+      const existedTodayLog = await this.loginLogRepository.findOne({
+        where: {
+          userId: userId,
+          loginDate: today,
+        },
+      });
+      if (!existedTodayLog) {
+        const log = new LoginLog();
+        log.userId = userId;
+        log.loginDate = today;
+        await this.loginLogRepository.save(log);
+        return { isFirstLoginToday: true };
+      }
+
+      return { isFirstLoginToday: false };
+    } catch (error) {
+      errorHandler(error);
+    }
+  }
+
+  async getStreakDays(userId: number): Promise<number> {
+    // 1. 查出所有登录记录（按日期倒序）
+    const logs = await this.loginLogRepository.find({
+      where: { userId: userId },
+      order: { loginDate: 'DESC' },
+    });
+    if (!logs.length) return 0; // 从来没打过卡
+    let streakDays = 1;
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    // 2. 计算连续打卡天数（从前一天开始检查）
+    for (let i = 1; i < logs.length; i++) {
+      const prevLogDate = new Date(logs[i - 1].loginDate);
+      const currLogDate = new Date(logs[i].loginDate);
+      // 相差一天（24小时）
+      if (prevLogDate.getTime() - currLogDate.getTime() === 86400000) {
+        streakDays++;
+      } else {
+        break; // 断了连续，停止计算
+      }
+    }
+    // 3. 判断今天是否打卡
+    const lastLogDate = new Date(logs[0].loginDate).toDateString();
+    const todayString = today.toDateString();
+    // 如果最后一天不是今天，说明今天还没打卡，连续天数归零
+    if (lastLogDate !== todayString) {
+      return 0;
+    }
+
+    if (streakDays < 0) {
+      streakDays = 0;
+    }
+    return streakDays;
   }
 }

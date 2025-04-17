@@ -5,10 +5,11 @@ import { TaskModule } from 'src/task/task.module';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { MessageModule } from 'src/message/message.module';
+import { LoginLog } from './entities/login-log.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, LoginLog]),
     forwardRef(() => TaskModule),
     MessageModule,
   ],

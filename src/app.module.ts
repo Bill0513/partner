@@ -21,6 +21,7 @@ import { MessageModule } from './message/message.module';
 import { RewardLike } from './reward/entities/reward-like.entity';
 import { Message } from './message/entities/message.entity';
 import { AiGeneratorModule } from './ai-generator/ai-generator.module';
+import { LoginLog } from './user/entities/login-log.entity';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AiGeneratorModule } from './ai-generator/ai-generator.module';
             Exchange,
             RewardLike,
             Message,
+            LoginLog,
           ],
           poolSize: 10,
           connectorPackage: 'mysql2',

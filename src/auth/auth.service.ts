@@ -50,6 +50,8 @@ export class AuthService {
       throw new UnauthorizedException('您的账户已被禁用，暂时无法登录');
     }
 
+    await this.userService.recordLogin(res.id);
+
     // 生成token
     const userData = { ...res, password: '' };
     const token = await this.jwtService.signAsync(userData);
