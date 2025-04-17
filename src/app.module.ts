@@ -54,6 +54,7 @@ import { AiGeneratorModule } from './ai-generator/ai-generator.module';
           extra: {
             authPlugin: 'sha256_password',
           },
+          timezone: '+08:00',
         };
       },
       inject: [ConfigService],

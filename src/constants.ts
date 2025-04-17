@@ -28,6 +28,7 @@ export const USER_CONSTANT = {
   NO_BINGDING_MY: '不能绑定自己',
   EXIST_PARTNER: '绑定用户已有伴侣',
   EXIST_PARTNER2: '你已有伴侣',
+  NO_PARTNER_BOUND: '没有找到伴侣',
 };
 
 export enum MessageType {

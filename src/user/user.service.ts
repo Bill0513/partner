@@ -161,6 +161,75 @@ export class UserService {
     }
   }
 
+  async unbindPartner(userId: number) {
+    const queryRunner =
+      this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 查找当前用户
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        return BusinessException.badRequest(USER_CONSTANT.NOT_FOUND);
+      }
+
+      const partnerId = user.partnerId;
+      if (!partnerId) {
+        return BusinessException.badRequest(USER_CONSTANT.NO_PARTNER_BOUND);
+      }
+
+      // 查找伴侣用户
+      const partner = await this.userRepository.findOne({
+        where: { id: partnerId },
+      });
+      if (!partner) {
+        // 如果伴侣数据缺失，也清理自己状态
+        await queryRunner.manager.update(User, user.id, {
+          partnerId: null,
+          bindingTime: null,
+          reward: 0,
+        });
+        await queryRunner.commitTransaction();
+        return true;
+      }
+
+      // 清理双方partnerId和bindingTime
+      await queryRunner.manager.update(User, user.id, {
+        partnerId: null,
+        bindingTime: null,
+        reward: 0,
+      });
+
+      await queryRunner.manager.update(User, partner.id, {
+        partnerId: null,
+        bindingTime: null,
+        reward: 0,
+      });
+
+      // 发送系统消息通知双方
+      await this.messageService.sendSystemMessage(
+        user.id,
+        '解除伴侣绑定',
+        `您已成功解除与 ${partner.nickname} 的伴侣绑定。`,
+      );
+
+      await this.messageService.sendSystemMessage(
+        partner.id,
+        '解除伴侣绑定',
+        `${user.nickname} 已解除与您的伴侣绑定。`,
+      );
+
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      errorHandler(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async getPartner(userId: number): Promise<number | null> {
     try {
       const user = await this.userRepository.findOne({
@@ -196,6 +265,22 @@ export class UserService {
       await this.userRepository.update(existUser.id, existUser);
 
       return true;
+    } catch (error) {
+      errorHandler(error);
+    }
+  }
+
+  async getAvatarById(userId: number): Promise<{ avatar: string | null }> {
+    try {
+      const user = await this.userRepository.findOne({
+        select: ['avatar'],
+        where: { id: userId },
+      });
+      if (!user) {
+        // 可以根据需求抛错或者返回默认头像
+        return { avatar: null };
+      }
+      return { avatar: user.avatar };
     } catch (error) {
       errorHandler(error);
     }

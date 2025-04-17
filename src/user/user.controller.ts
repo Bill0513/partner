@@ -22,6 +22,12 @@ export class UserController {
     return await this.userService.setPartner(uId, userId);
   }
 
+  @Get('partner-unbind')
+  @RequireLogin()
+  async unbindPartner(@UserInfo('id') userId) {
+    return await this.userService.unbindPartner(userId);
+  }
+
   @Post('update-avatar')
   @RequireLogin()
   async updateAvatar(
@@ -29,5 +35,11 @@ export class UserController {
     @UserInfo('id') userId: number,
   ) {
     return await this.userService.updateAvatar(userId, updateAvatarDto);
+  }
+
+  @Get('avatar')
+  @RequireLogin()
+  async getAvatar(@Query('id') id: number) {
+    return await this.userService.getAvatarById(id);
   }
 }
