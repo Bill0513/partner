@@ -11,7 +11,7 @@ export class LoginLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ comment: '登录 IP（可拓展）' })
+  @Column({ comment: '登录 IP（可拓展）', nullable: true })
   ip: string;
 
   @Column({ comment: '设备信息（可拓展）', nullable: true })
