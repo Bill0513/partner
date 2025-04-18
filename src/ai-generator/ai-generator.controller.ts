@@ -4,6 +4,7 @@ import { Response } from 'express';
 import { AiGeneratorService } from './ai-generator.service';
 import { CreateTaskDto } from 'src/task/dto/create-task.dto';
 import { CreateRewardDto } from 'src/reward/dto/create-reward.dto';
+import { RequireLogin } from 'src/custom.decorator';
 
 @Controller('ai-generator')
 export class AiGeneratorController {
@@ -11,6 +12,7 @@ export class AiGeneratorController {
 
   @Post('generate-task')
   @HttpCode(200)
+  @RequireLogin()
   async generateTask(
     @Body() partialData: Partial<CreateTaskDto>,
     @Res() response: Response,
@@ -29,6 +31,7 @@ export class AiGeneratorController {
 
   @Post('generate-reward')
   @HttpCode(200)
+  @RequireLogin()
   async generateReward(
     @Body() partialData: Partial<CreateRewardDto>,
     @Res() response: Response,
