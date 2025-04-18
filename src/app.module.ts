@@ -27,19 +27,19 @@ import { LoginLog } from './user/entities/login-log.entity';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'src/.env',
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       useFactory(configService: ConfigService) {
         return {
           type: 'mysql',
-          host: configService.get('mysql_server_host'),
-          port: configService.get('mysql_server_port'),
-          username: configService.get('mysql_server_username'),
-          password: configService.get('mysql_server_password'),
-          database: configService.get('mysql_server_database'),
-          synchronize: true,
-          logging: true,
+          host: configService.get('MYSQL_SERVER_HOST'),
+          port: configService.get('MYSQL_SERVER_PORT'),
+          username: configService.get('MYSQL_SERVER_USERNAME'),
+          password: configService.get('MYSQL_SERVER_PASSWORD'),
+          database: configService.get('MYSQL_SERVER_DATABASE'),
+          synchronize: false,
+          logging: configService.get<string>('NODE_ENV') !== 'production',
           entities: [
             User,
             Task,
@@ -51,12 +51,11 @@ import { LoginLog } from './user/entities/login-log.entity';
             Message,
             LoginLog,
           ],
-          poolSize: 10,
+          poolSize: 5,
           connectorPackage: 'mysql2',
-          extra: {
-            authPlugin: 'sha256_password',
-          },
           timezone: '+08:00',
+          migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+          migrationsTableName: 'typeorm_migrations',
         };
       },
       inject: [ConfigService],
@@ -65,7 +64,7 @@ import { LoginLog } from './user/entities/login-log.entity';
       global: true,
       useFactory(configService: ConfigService) {
         return {
-          secret: configService.get('jwt_secret'),
+          secret: configService.get('JWR_SECRET'),
           signOptions: {
             expiresIn: '30m',
           },

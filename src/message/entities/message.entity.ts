@@ -1,5 +1,5 @@
 // src/message/entities/message.entity.ts
-import { MessageType } from 'src/constants';
+import { MessageType } from '../../constants';
 import {
   Entity,
   Column,
