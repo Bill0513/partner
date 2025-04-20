@@ -37,5 +37,7 @@ async function bootstrap() {
   SwaggerModule.setup('api-doc', app, document);
 
   await app.listen(process.env.PORT);
+
+  console.log(`Application is running on: ${await app.getUrl()}`); // 可以在日志中看到实际监听地址
 }
 bootstrap();
