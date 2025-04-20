@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { ALLOWED_SORT_FIELDS, MessageType } from 'src/constants';
-import { errorHandler } from '../../utils';
+import { errorHandler } from '../utils';
 import { BusinessException } from 'src/business-exception';
 import { MessageListDto } from './dto/message.dto';
 

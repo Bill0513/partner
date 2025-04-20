@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { SubTask } from './entities/sub_task.entity';
 import { CreateSubTaskDto } from './dto/create-sub_task.dto';
 import { UpdateSubTaskDto } from './dto/update-sub_task.dto';
-import { errorHandler } from '../../utils';
+import { errorHandler } from '../utils';
 import { Task } from 'src/task/entities/task.entity';
 import { BusinessException } from 'src/business-exception';
 import { SUB_TASK_CONSTANT, TASK_CONSTANT } from 'src/constants';

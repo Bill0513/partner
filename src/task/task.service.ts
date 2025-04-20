@@ -14,7 +14,7 @@ import { ALLOWED_SORT_FIELDS, TASK_CONSTANT } from 'src/constants';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/entities/user.entity';
 import { SubTask } from 'src/sub_task/entities/sub_task.entity';
-import { errorHandler } from '../../utils';
+import { errorHandler } from '../utils';
 import { BusinessException } from 'src/business-exception';
 import { MessageService } from 'src/message/message.service';
 @Injectable()
