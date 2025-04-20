@@ -2,7 +2,7 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
-import { SubTaskService } from 'src/sub_task/sub_task.service';
+import { SubTaskService } from '../sub_task/sub_task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import {
@@ -10,13 +10,13 @@ import {
   RemoveTaskDto,
   TaskFindAllDto,
 } from './dto/task.dto';
-import { ALLOWED_SORT_FIELDS, TASK_CONSTANT } from 'src/constants';
-import { UserService } from 'src/user/user.service';
-import { User } from 'src/user/entities/user.entity';
-import { SubTask } from 'src/sub_task/entities/sub_task.entity';
+import { ALLOWED_SORT_FIELDS, TASK_CONSTANT } from '../constants';
+import { UserService } from '../user/user.service';
+import { User } from '../user/entities/user.entity';
+import { SubTask } from '../sub_task/entities/sub_task.entity';
 import { errorHandler } from '../utils';
-import { BusinessException } from 'src/business-exception';
-import { MessageService } from 'src/message/message.service';
+import { BusinessException } from '../business-exception';
+import { MessageService } from '../message/message.service';
 @Injectable()
 export class TaskService {
   constructor(

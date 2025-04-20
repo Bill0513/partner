@@ -2,8 +2,8 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { Response } from 'express';
-import { CreateTaskDto } from 'src/task/dto/create-task.dto';
-import { CreateRewardDto } from 'src/reward/dto/create-reward.dto';
+import { CreateTaskDto } from '../task/dto/create-task.dto';
+import { CreateRewardDto } from '../reward/dto/create-reward.dto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

@@ -1,11 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { MessageListDto } from './dto/message.dto';
-import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from '../custom.decorator';
 
 @Controller('message')
 export class MessageController {
-  constructor(private readonly messageService: MessageService) {}
+  constructor(private readonly messageService: MessageService) { }
 
   @Get('list')
   @RequireLogin()

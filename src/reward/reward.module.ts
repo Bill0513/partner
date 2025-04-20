@@ -4,10 +4,10 @@ import { RewardController } from './reward.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reward } from './entities/reward.entity';
 import { Rule } from './entities/rule.entity';
-import { UserModule } from 'src/user/user.module';
+import { UserModule } from '../user/user.module';
 import { Exchange } from './entities/exchange.entity';
 import { RewardLike } from './entities/reward-like.entity';
-import { MessageModule } from 'src/message/message.module';
+import { MessageModule } from '../message/message.module';
 
 @Module({
   imports: [
@@ -18,4 +18,4 @@ import { MessageModule } from 'src/message/message.module';
   controllers: [RewardController],
   providers: [RewardService],
 })
-export class RewardModule {}
+export class RewardModule { }

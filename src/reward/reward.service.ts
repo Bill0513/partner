@@ -6,8 +6,8 @@ import { Reward, RewardStatus } from './entities/reward.entity';
 import { Repository } from 'typeorm';
 import { Rule } from './entities/rule.entity';
 import { RewardFindAllDto } from './dto/list-reward.dto';
-import { UserService } from 'src/user/user.service';
-import { ALLOWED_SORT_FIELDS, REWARD_CONSTANT } from 'src/constants';
+import { UserService } from '../user/user.service';
+import { ALLOWED_SORT_FIELDS, REWARD_CONSTANT } from '../constants';
 import { RemoveRewardDto } from './dto/remove-reward.dto';
 import {
   ExchangeDto,
@@ -16,11 +16,11 @@ import {
   OperationType,
 } from './dto/exchange.dto';
 import { Exchange, ExchangeStatus } from './entities/exchange.entity';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../user/entities/user.entity';
 import { errorHandler } from '../utils';
-import { BusinessException } from 'src/business-exception';
+import { BusinessException } from '../business-exception';
 import * as dayjs from 'dayjs';
-import { MessageService } from 'src/message/message.service';
+import { MessageService } from '../message/message.service';
 import { LikeAction, LikeRewardDto } from './dto/like-reward.dto';
 import { RewardLike } from './entities/reward-like.entity';
 

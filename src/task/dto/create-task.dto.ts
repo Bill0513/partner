@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { CreateSubTaskDto } from 'src/sub_task/dto/create-sub_task.dto';
+import { CreateSubTaskDto } from '../../sub_task/dto/create-sub_task.dto';
 export class CreateTaskDto {
   @IsString()
   @IsNotEmpty()

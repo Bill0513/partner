@@ -2,13 +2,13 @@
 import { Controller, Post, Body, HttpCode, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AiGeneratorService } from './ai-generator.service';
-import { CreateTaskDto } from 'src/task/dto/create-task.dto';
-import { CreateRewardDto } from 'src/reward/dto/create-reward.dto';
-import { RequireLogin } from 'src/custom.decorator';
+import { CreateTaskDto } from '../task/dto/create-task.dto';
+import { CreateRewardDto } from '../reward/dto/create-reward.dto';
+import { RequireLogin } from '../custom.decorator';
 
 @Controller('ai-generator')
 export class AiGeneratorController {
-  constructor(private readonly aiGeneratorService: AiGeneratorService) {}
+  constructor(private readonly aiGeneratorService: AiGeneratorService) { }
 
   @Post('generate-task')
   @HttpCode(200)

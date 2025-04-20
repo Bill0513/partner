@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskService } from './task.service';
-import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from '../custom.decorator';
 import {
   CompletedTaskDto,
   RemoveTaskDto,

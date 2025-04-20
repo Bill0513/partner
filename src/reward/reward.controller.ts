@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { RewardService } from './reward.service';
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { UpdateRewardDto } from './dto/update-reward.dto';
-import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from '../custom.decorator';
 import { RewardFindAllDto } from './dto/list-reward.dto';
 import { RemoveRewardDto } from './dto/remove-reward.dto';
 import {
@@ -14,7 +14,7 @@ import { LikeRewardDto } from './dto/like-reward.dto';
 
 @Controller('reward')
 export class RewardController {
-  constructor(private readonly rewardService: RewardService) {}
+  constructor(private readonly rewardService: RewardService) { }
 
   @Post('create')
   @RequireLogin()

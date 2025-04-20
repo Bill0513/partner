@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { PaginationDto } from 'src/common.dto';
+import { PaginationDto } from '../../common.dto';
 
 export class TaskFindAllDto extends PaginationDto {
   @IsString()

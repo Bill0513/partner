@@ -1,7 +1,6 @@
-// src/message/dto/create-message.dto.ts
 import { Optional } from '@nestjs/common';
 import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
-import { MessageType } from 'src/constants';
+import { MessageType } from '../../constants';
 
 export class CreateMessageDto {
   @IsEnum(MessageType)

@@ -1,14 +1,14 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from '../custom.decorator';
 import { UpdateAvatarDto } from './dto/updateAvatar.dto';
 
 @Controller('user')
 @ApiBearerAuth()
 @ApiTags('用户模块')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService) { }
 
   @Get('profile')
   @RequireLogin()

@@ -1,5 +1,5 @@
 import { IsInt, IsNotEmpty } from 'class-validator';
-import { PaginationDto } from 'src/common.dto';
+import { PaginationDto } from '../../common.dto';
 
 export class ExchangeDto {
   @IsInt()
@@ -7,7 +7,7 @@ export class ExchangeDto {
   id: number;
 }
 
-export class ExchangeListDto extends PaginationDto {}
+export class ExchangeListDto extends PaginationDto { }
 
 export enum OperationType {
   CONFIRM = 'CONFIRM',

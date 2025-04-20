@@ -1,10 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { SubTaskService } from './sub_task.service';
-import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from '../custom.decorator';
 
 @Controller('sub-task')
 export class SubTaskController {
-  constructor(private readonly subTaskService: SubTaskService) {}
+  constructor(private readonly subTaskService: SubTaskService) { }
 
   @Get('complete')
   @RequireLogin()

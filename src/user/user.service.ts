@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import { TaskService } from 'src/task/task.service';
+import { TaskService } from '../task/task.service';
 import { AuthUserDto } from '../auth/dto/auth.dto';
 import { errorHandler } from '../utils';
 import { Factory } from 'vue3-avataaars';
 import { UpdateAvatarDto } from './dto/updateAvatar.dto';
-import { BusinessException } from 'src/business-exception';
-import { USER_CONSTANT } from 'src/constants';
-import { MessageService } from 'src/message/message.service';
+import { BusinessException } from '../business-exception';
+import { USER_CONSTANT } from '../constants';
+import { MessageService } from '../message/message.service';
 import { LoginLog } from './entities/login-log.entity';
 import * as dayjs from 'dayjs';
 

@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { NoAuth } from 'src/decorators/noAuth.decorator';
+import { NoAuth } from '../decorators/noAuth.decorator';
 import { AuthUserDto } from './dto/auth.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
 @Controller('auth')
 @ApiTags('登录注册模块')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('/signin')
   @NoAuth('ALL')

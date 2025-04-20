@@ -1,5 +1,5 @@
-import { PaginationDto } from 'src/common.dto';
-import { MessageType } from 'src/constants';
+import { PaginationDto } from '../../common.dto';
+import { MessageType } from '../../constants';
 
 export class MessageListDto extends PaginationDto {
   type: MessageType | 'all';
