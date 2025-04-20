@@ -17,7 +17,7 @@ import {
 } from './dto/exchange.dto';
 import { Exchange, ExchangeStatus } from './entities/exchange.entity';
 import { User } from 'src/user/entities/user.entity';
-import { errorHandler } from 'src/utils';
+import { errorHandler } from '../../utils';
 import { BusinessException } from 'src/business-exception';
 import * as dayjs from 'dayjs';
 import { MessageService } from 'src/message/message.service';
@@ -39,7 +39,7 @@ export class RewardService {
     @InjectRepository(RewardLike)
     private rewardLikeRepository: Repository<RewardLike>,
     private readonly messageService: MessageService,
-  ) {}
+  ) { }
 
   async list(queryDto: RewardFindAllDto, userId: number) {
     try {

@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { TaskService } from 'src/task/task.service';
 import { AuthUserDto } from '../auth/dto/auth.dto';
-import { errorHandler } from 'src/utils';
+import { errorHandler } from '../../utils';
 import { Factory } from 'vue3-avataaars';
 import { UpdateAvatarDto } from './dto/updateAvatar.dto';
 import { BusinessException } from 'src/business-exception';
@@ -24,7 +24,7 @@ export class UserService {
 
     @InjectRepository(LoginLog)
     private loginLogRepository: Repository<LoginLog>,
-  ) {}
+  ) { }
 
   async create(authUserDto: AuthUserDto) {
     try {

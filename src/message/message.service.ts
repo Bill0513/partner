@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { ALLOWED_SORT_FIELDS, MessageType } from 'src/constants';
-import { errorHandler } from 'src/utils';
+import { errorHandler } from '../../utils';
 import { BusinessException } from 'src/business-exception';
 import { MessageListDto } from './dto/message.dto';
 
@@ -14,7 +14,7 @@ export class MessageService {
   constructor(
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
-  ) {}
+  ) { }
 
   /**
    * 创建消息
