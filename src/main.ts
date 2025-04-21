@@ -19,13 +19,8 @@ async function bootstrap() {
 
   app.enableCors({
     // origin: '*', // 允许任何来源 - 开发时可以，生产环境建议指定明确来源
-    origin: [
-        'http://localhost:4000', // 你的前端本地开发环境地址 (替换 xxxx 为你的端口号)
-        'https://ppp-six-nu.vercel.app', // 你部署在 Vercel 上的前端项目地址
-        // 如果还有其他允许的来源，也加在这里
-    ],
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // 允许的方法
-    allowedHeaders: 'Content-Type, Accept, Authorization', // 允许的请求头，确保包含 Authorization (如果你用了 Bearer Token) 和 Content-Type
     credentials: true, // 允许携带凭证 (例如 cookies, Authorization header)
   });
 
